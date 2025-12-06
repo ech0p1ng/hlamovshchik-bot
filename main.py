@@ -7,6 +7,7 @@ import asyncio
 init()
 
 BOT_API_KEY = os.getenv('BOT_API_KEY')
+CHANNEL_ID = os.getenv('CHANNEL_ID')
 
 
 async def main():
