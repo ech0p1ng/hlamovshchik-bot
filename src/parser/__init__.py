@@ -3,8 +3,6 @@ from bs4 import BeautifulSoup as bs
 from bs4 import Tag
 import httpx
 import config
-import asyncio
-import json
 
 
 async def __fetch(url: str) -> httpx.Response:
@@ -28,18 +26,22 @@ async def __fetch(url: str) -> httpx.Response:
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
         if response.status_code != 200:
-            raise Exception(
-                f'Не удалось загрузить страинцу: {response.status_code}'
-            )
+            msg = f'Не удалось загрузить страинцу: {response.status_code}'
+            raise Exception(msg)
         return response
 
 
 async def __parse_data(message: Tag) -> dict[str, Any]:
     message_text = message.select('.tgme_widget_message_text.js-message_text')
-    message_id = (str(message
-                  .select('.tgme_widget_message.text_not_supported_wrap.js-widget_message')[0]
-                  .get('data-post'))
-                  .replace(f'{config.CHANNEL_NAME}/', ''))
+    message_id = (
+        str(
+            message
+            .select(
+                '.tgme_widget_message.text_not_supported_wrap.js-widget_message',
+                limit=1
+            )[0]
+            .get('data-post')
+        ).replace(f'{config.CHANNEL_NAME}/', ''))
     media = message.select('a.tgme_widget_message_photo_wrap')
     image_urls = []
     for m in media:
@@ -50,18 +52,50 @@ async def __parse_data(message: Tag) -> dict[str, Any]:
                 url = s.replace("background-image:url('", '')[:-2]
                 image_urls.append(url)
     return {
-        'id': message_id,
+        'id': int(message_id),
         'text': message_text[0].getText(),
         'image_urls': image_urls,
     }
 
 
-async def parse_messages(after: int = 1) -> list[dict[str, Any]]:
-    url = f'https://t.me/s/{config.CHANNEL_NAME}?after={after}'
-    response = await __fetch(url)
-    soup = bs(response.text, 'html.parser')
-    messages = soup.select('.tgme_widget_message_wrap.js-widget_message_wrap')
-    parsed_data = [await __parse_data(m) for m in messages]
-    return parsed_data
-    # with open(f'messages{after}.json', 'w', encoding='utf8') as f:
-    #     f.write(json.dumps(parsed_data, ensure_ascii=False, indent=2))
+async def parse_messages(after: int | None = None, before: int | None = None) -> list[dict[str, Any]] | None:
+    '''
+    Парсинг 15 сообщений
+
+    Args:
+        after (int, optional): ID поста, после которого будут спаршены сообщения. По-умолчанию: None.
+        before (int, optional): ID поста, до которого будут спаршены сообщения. По-умолчанию: None.
+
+    Returns:
+        list[dict[str,Any]]: Спаршенные сообщения в формате 
+    ```
+    [
+        {
+            "id": message_id,
+            "text": message_text,
+            "image_urls": [image_urls]
+        }
+    ]
+        ```
+    '''
+    if before is not None and after is not None:
+        raise ValueError('Нельзя одновременно использовать before и after')
+
+    base_url = f'https://t.me/s/{config.CHANNEL_NAME}'
+
+    if after is not None:
+        url = f'{base_url}?after={after}'
+    elif before is not None:
+        url = f'{base_url}?before={before}'
+    else:
+        url = base_url
+
+    try:
+        response = await __fetch(url)
+    except Exception as e:
+        raise e
+    else:
+        soup = bs(response.text, 'html.parser')
+        messages = soup.select('.tgme_widget_message_wrap.js-widget_message_wrap')
+        parsed_data = [await __parse_data(m) for m in messages]
+        return parsed_data
