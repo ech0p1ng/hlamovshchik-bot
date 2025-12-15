@@ -2,7 +2,7 @@ from typing import Any
 from bs4 import BeautifulSoup as bs
 from bs4 import Tag
 import httpx
-import config
+from config import settings
 
 
 async def __fetch(url: str) -> httpx.Response:
@@ -41,7 +41,7 @@ async def __parse_data(message: Tag) -> dict[str, Any]:
                 limit=1
             )[0]
             .get('data-post')
-        ).replace(f'{config.CHANNEL_NAME}/', ''))
+        ).replace(f'{settings.telegram.channel_id}/', ''))
     media = message.select('a.tgme_widget_message_photo_wrap')
     image_urls = []
     for m in media:
@@ -81,7 +81,7 @@ async def parse_messages(after: int | None = None, before: int | None = None) ->
     if before is not None and after is not None:
         raise ValueError('Нельзя одновременно использовать before и after')
 
-    base_url = f'https://t.me/s/{config.CHANNEL_NAME}'
+    base_url = f'https://t.me/s/{settings.telegram.channel_name}'
 
     if after is not None:
         url = f'{base_url}?after={after}'

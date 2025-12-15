@@ -2,7 +2,7 @@ import logging
 import asyncio
 from aiogram import Bot, Dispatcher
 
-import config
+from config import settings
 from menu import router as menu_router
 from chat import router as chat_router
 
@@ -12,11 +12,11 @@ routers = [
     chat_router,
 ]
 
-if not config.BOT_TOKEN:
+if not settings.telegram.bot_token:
     print("Не указан BOT_TOKEN")
     exit()
 
-bot = Bot(token=config.BOT_TOKEN)
+bot = Bot(token=settings.telegram.bot_token)
 
 
 async def main():
