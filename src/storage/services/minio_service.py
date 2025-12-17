@@ -1,3 +1,4 @@
+from io import BytesIO
 import os
 import ssl
 import uuid
@@ -90,16 +91,19 @@ class MinioService:
         except S3Error as e:
             raise e
 
-    # TODO: изменить тайпхинт для file
     async def upload_file(
         self,
-        file: UploadFile = File(...)
+        file: BytesIO,
+        file_name: str,
+        file_ext: str
     ) -> AttachmentMinioSchema:
         '''
         Загрузка файла в MinIO
 
         Args:
-            file (UploadFile): Загружаемый файл
+            file (BytesIO): Загружаемый файл
+            file_name (str): Имя файла
+            file_ext (str): Расширение файла
 
         Returns:
             AttachmentMinioSchema: Упрощенная Pydantic-схема медиа-контента, \
@@ -113,9 +117,8 @@ class MinioService:
         await self.__ensure_bucket_exists()
 
         try:
-            full_file_name = f"{uuid.uuid4()}-{file.filename}"
-            file_size = os.fstat(file.file.fileno()).st_size
-            file_name, file_extension = MinioService.__split_file_name(full_file_name)
+            full_file_name = f'{uuid.uuid4()}-{file_name}.{file_ext}'
+            file_size = os.fstat(file.fileno()).st_size
             url = self.get_file_url(full_file_name)
 
             if file_size > settings.attachment.max_size:
@@ -128,15 +131,15 @@ class MinioService:
                     self.client.put_object,
                     self.bucket_name,
                     full_file_name,
-                    file.file,
+                    file,
                     file_size,
-                    content_type=str(file.content_type)
+                    # content_type=str(file.content_type)
                 )
 
                 return AttachmentMinioSchema(
                     minio_file_url='http://' + url,
-                    file_name=file_name,
-                    file_extension=file_extension,
+                    file_name=str(file_name),
+                    file_extension=file_ext,
                     file_size=file_size
                 )
         except S3Error as exc:

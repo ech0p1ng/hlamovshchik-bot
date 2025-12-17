@@ -1,34 +1,8 @@
 from typing import Any
 from bs4 import BeautifulSoup as bs
 from bs4 import Tag
-import httpx
 from config import settings
-
-
-async def __fetch(url: str) -> httpx.Response:
-    '''
-    GET-запрос
-
-    Args:
-        url (str): URL
-
-    Raises:
-        Exception: Не удалось загрузить страинцу
-
-    Returns:
-        httpx.Response: Ответ сервера
-    '''
-
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0',
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers)
-        if response.status_code != 200:
-            msg = f'Не удалось загрузить страинцу: {response.status_code}'
-            raise Exception(msg)
-        return response
+import async_requests
 
 
 async def __parse_data(message: Tag) -> dict[str, Any]:
@@ -91,7 +65,7 @@ async def parse_messages(after: int | None = None, before: int | None = None) ->
         url = base_url
 
     try:
-        response = await __fetch(url)
+        response = await async_requests.get(url)
     except Exception as e:
         raise e
     else:

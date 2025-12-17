@@ -3,8 +3,8 @@ import asyncio
 from aiogram import Bot, Dispatcher
 
 from config import settings
-from menu import router as menu_router
-from chat import router as chat_router
+from tg.bot.menu import router as menu_router
+from tg.bot.chat import router as chat_router
 
 
 routers = [

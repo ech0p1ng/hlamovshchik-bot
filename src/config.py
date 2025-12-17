@@ -6,6 +6,7 @@ from typing import Self
 
 dot_env_path = str(Path(__file__).parent.parent / '.env')
 
+
 class MinioSettings(BaseSettings):
     access_key: str
     secret_key: str
