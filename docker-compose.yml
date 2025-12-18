@@ -1,5 +1,6 @@
 services:
   app:
+    container_name: app
     build: 
       dockerfile: ./Dockerfile
       target: server # server - для продакшена, dev - для разработки
@@ -22,10 +23,11 @@ services:
       - .env
   
   db:
+    container_name: postgres_db
     image: postgres
     restart: always
     ports:
-      - "5432:5432"
+      - "${POSTGRES__PORT}:${POSTGRES__PORT}"
     environment:
       POSTGRES_HOST: ${POSTGRES__HOST}
       POSTGRES_PORT: ${POSTGRES__PORT}
@@ -42,8 +44,8 @@ services:
     entrypoint: /bin/sh
     command: -c "mkdir -p /data/private-bucket && minio server /data --console-address ':9001'"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO__PORT}:${MINIO__PORT}"
+      - "${MINIO__PORT_SECURE}:${MINIO__PORT_SECURE}"
     env_file:
       - .env
     volumes:

@@ -11,9 +11,11 @@ class MinioSettings(BaseSettings):
     access_key: str
     secret_key: str
     bucket_name: str
-    endpoint: str
     root_user: str
     root_password: str
+    port: int
+    port_secure: int
+    endpoint: str
 
 
 class PostgresSettings(BaseSettings):
