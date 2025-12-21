@@ -14,7 +14,7 @@ RUN mkdir -p /root/.cache/pypoetry/virtualenvs && \
 RUN pip install --upgrade pip
 RUN pip install poetry==${POETRY_VERSION}
 RUN poetry env use /usr/local/bin/python
-RUN poetry install --no-root
+
 
 FROM base AS server
 

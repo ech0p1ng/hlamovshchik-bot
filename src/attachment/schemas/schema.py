@@ -31,14 +31,11 @@ class AttachmentMinioSchema(AttachmentSimpleSchema):
     minio_file_url: str | None
 
 
-class AttachmentSchema(BaseSchema, AttachmentMinioSchema):
+class AttachmentSchema(AttachmentMinioSchema):
     '''
     Упрощенная Pydantic-схема медиа-контента, прикрепляемого к теме
 
     Args:
-        id (int): Идентификатор
-        block_id (int): Идентификатор блока, \
-            к которому принадлежит данный медиа-контент
         tg_msg_id (str): Идентификатор сообщения
         tg_file_url (str): URL файла на серверах telegram
         minio_file_url (str): Ссылка на файл в MinIO
@@ -47,4 +44,21 @@ class AttachmentSchema(BaseSchema, AttachmentMinioSchema):
         file_size (int): Размер файла (байт)
     '''
 
-    block_id: int = Field(gt=0)
+    tg_msg_id: str
+    tg_file_url: str
+
+    @classmethod
+    def from_minio_schema(
+        cls,
+        tg_msg_id: str,
+        tg_file_url: str,
+        minio_schema: AttachmentMinioSchema
+    ) -> 'AttachmentSchema':
+        return AttachmentSchema(
+            tg_msg_id=tg_msg_id,
+            tg_file_url=tg_file_url,
+            minio_file_url=minio_schema.minio_file_url,
+            file_name=minio_schema.file_name,
+            file_extension=minio_schema.file_extension,
+            file_size=minio_schema.file_size,
+        )

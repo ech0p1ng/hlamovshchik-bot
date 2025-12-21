@@ -1,18 +1,14 @@
 from io import BytesIO
-from typing import Any
-from uuid import uuid4
 from minio import S3Error
-from pathlib import Path
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from async_requests import get
+from base.service import BaseService
 from attachment.models.model import AttachmentModel
+from attachment.schemas.schema import AttachmentSchema
 from attachment.repositories.repository import AttachmentRepository
 from exceptions.exception import FileIsTooLargeError, WasNotCreatedError
-
-from base.service import BaseService
 from storage.services.minio_service import MinioService
-from config import settings
-from exceptions.exception import NotFoundError
-from async_requests import get
 
 
 class AttachmentService(BaseService[AttachmentModel]):
@@ -37,12 +33,12 @@ class AttachmentService(BaseService[AttachmentModel]):
 
     async def upload_files(
         self,
-        *file_urls: str
+        *tg_msg_data: tuple[str, str]
     ) -> None:
-        for file_url in file_urls:
+        for message_id, file_url in tg_msg_data:
             response = await self.__download_file(file_url)
             try:
-                schema = await self.minio_service.upload_file(*response)
+                minio_schema = await self.minio_service.upload_file(*response)
             except S3Error as exc:
                 raise WasNotCreatedError(f"MinIO: {exc}")
             except FileIsTooLargeError as exc:
@@ -50,8 +46,18 @@ class AttachmentService(BaseService[AttachmentModel]):
             except Exception as exc:
                 raise Exception(f'MinIO: {exc}')
 
+            schema = AttachmentSchema.from_minio_schema(
+                message_id,
+                file_url,
+                minio_schema
+            )
+
             model = AttachmentModel.from_schema(schema)
-            await self.create(model)
+            filter = {
+                'tg_file_url': file_url
+            }
+            if not await self.exists(filter):
+                await self.create(model)
 
     async def __download_file(self, url: str) -> tuple[BytesIO, str, str]:
         '''

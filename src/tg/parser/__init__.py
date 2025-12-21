@@ -15,7 +15,7 @@ async def __parse_data(message: Tag) -> dict[str, Any]:
                 limit=1
             )[0]
             .get('data-post')
-        ).replace(f'{settings.telegram.channel_id}/', ''))
+        ).replace(f'{settings.telegram.channel_name}/', ''))
     media = message.select('a.tgme_widget_message_photo_wrap')
     image_urls = []
     for m in media:

@@ -5,6 +5,7 @@ import json
 from tg.parser import parse_messages
 import asyncio
 import random
+from logger import logger
 
 router = Router()
 
@@ -22,16 +23,14 @@ async def update_messages_base(message: types.Message) -> None:
         last_msg_id = parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
         msg_id = 0
         count = 1
-        
+
         while msg_id < last_msg_id:
             parsed = await parse_messages(after=count)
             if parsed is not None:
                 count += len(parsed)
                 for m in parsed:
-                    await message.answer(
-                        text=f'```{json.dumps(m, ensure_ascii=False, indent=2)}```',
-                        parse_mode=ParseMode.MARKDOWN_V2
-                    )
+                    logger.info(json.dumps(m, ensure_ascii=False, indent=2))
+                    await message.answer('\n'.join(m['image_urls']))
             await asyncio.sleep(random.randint(2, 5))
     else:
         await message.answer('Не удалось спарсить сообщения')
