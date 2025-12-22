@@ -2,10 +2,11 @@ from aiogram import types, F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.enums import ParseMode
 import json
-from tg.parser import parse_messages
 import asyncio
 import random
 from logger import logger
+
+from tg.parser import parse_messages
 
 router = Router()
 

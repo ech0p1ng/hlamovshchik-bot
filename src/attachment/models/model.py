@@ -7,7 +7,7 @@ from attachment.schemas.schema import (
 
 class AttachmentModel(BaseModel):
     '''
-    SQL Alchemy модель медиа файла
+    SQL Alchemy модель медиафайла
 
     Args:
         id (int): Идентификатор
@@ -17,7 +17,6 @@ class AttachmentModel(BaseModel):
         file_name (Mapped[str]): Имя файла
         file_extension (Mapped[str]): Расширение файла
         file_size (Mapped[int]): Размер файла в байтах
-        block (BlockModel): Блок, к которому относится прикрепленный файл
     '''
     __tablename__ = 'attachment'
 
@@ -48,23 +47,36 @@ class AttachmentModel(BaseModel):
     @classmethod
     def from_schema(
         cls,
-        schema: AttachmentSimpleSchema |
-            AttachmentSchema | AttachmentMinioSchema
+        schema: AttachmentSimpleSchema | AttachmentSchema | AttachmentMinioSchema,
+        tg_msg_id: str | None = None,
+        tg_file_url: str | None = None
     ) -> 'AttachmentModel':
+        '''
+        Получение модели из Pydantic-схем
+
+        Args:
+            schema (AttachmentSimpleSchema | AttachmentSchema | AttachmentMinioSchema): Pydantic-схема
+            tg_msg_id (str | None, optional): ID сообщения в Telegram. По-умолчанию: `None`.
+            tg_file_url (str | None, optional): URL сообщения в Telegram. По-умолчанию: `None`.
+
+        Returns:
+            AttachmentModel: SQL Alchemy модель медиафайла
+        '''
         if type(schema) is AttachmentSchema:
             return cls(
                 minio_file_url=schema.minio_file_url,
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
                 file_size=schema.file_size,
-                block_id=schema.block_id
             )
         elif type(schema) is AttachmentMinioSchema:
             return cls(
+                tg_msg_id=tg_msg_id,
+                tg_file_url=tg_file_url,
                 minio_file_url=schema.minio_file_url,
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
-                file_size=schema.file_size
+                file_size=schema.file_size,
             )
         else:
             return cls(

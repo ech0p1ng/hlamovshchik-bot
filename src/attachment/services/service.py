@@ -7,7 +7,7 @@ from base.service import BaseService
 from attachment.models.model import AttachmentModel
 from attachment.schemas.schema import AttachmentSchema
 from attachment.repositories.repository import AttachmentRepository
-from exceptions.exception import FileIsTooLargeError, WasNotCreatedError
+from exceptions.exception import FileIsTooLargeError, WasNotCreatedError, AlreadyExistsError
 from storage.services.minio_service import MinioService
 
 
@@ -35,6 +35,14 @@ class AttachmentService(BaseService[AttachmentModel]):
         self,
         *tg_msg_data: tuple[str, str]
     ) -> None:
+        '''
+        Загрузка медиафайлов в MinIO и MinIO-ссылок на них в БД
+
+        Raises:
+            WasNotCreatedError: Не удалось загрузить в MinIO
+            FileIsTooLargeError: Файл слишком большой для MinIO
+            Exception: Прочие ошибки MinIO
+        '''
         for message_id, file_url in tg_msg_data:
             response = await self.__download_file(file_url)
             try:
@@ -46,18 +54,19 @@ class AttachmentService(BaseService[AttachmentModel]):
             except Exception as exc:
                 raise Exception(f'MinIO: {exc}')
 
-            schema = AttachmentSchema.from_minio_schema(
-                message_id,
-                file_url,
-                minio_schema
+            # TODO Проверить работу в MinIO через докер
+            model = AttachmentModel.from_schema(
+                minio_schema,
+                tg_msg_id=message_id,
+                tg_file_url=file_url,
             )
 
-            model = AttachmentModel.from_schema(schema)
             filter = {
                 'tg_file_url': file_url
             }
-            if not await self.exists(filter):
-                await self.create(model)
+            if await self.exists(filter, raise_exc=False):
+                raise AlreadyExistsError('Данный медиафайл уже загружен')
+            await self.create(model)
 
     async def __download_file(self, url: str) -> tuple[BytesIO, str, str]:
         '''
