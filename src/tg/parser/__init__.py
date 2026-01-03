@@ -1,4 +1,8 @@
 from typing import Any
+import json
+from logger import logger
+import asyncio
+import random
 from bs4 import BeautifulSoup as bs
 from bs4 import Tag
 from config import settings
@@ -73,3 +77,41 @@ async def parse_messages(after: int | None = None, before: int | None = None) ->
         messages = soup.select('.tgme_widget_message_wrap.js-widget_message_wrap')
         parsed_data = [await __parse_data(m) for m in messages]
         return parsed_data
+
+
+async def parse_messages_all() -> list[dict[str, Any]]:
+    '''
+    Парсинг всех сообщений из канала
+
+    Raises:
+        Exception: Не удалось спарсить сообщения
+
+    Returns:
+        list[dict[str,Any]]: Спаршенные сообщения в формате 
+    ```
+    [
+        {
+            "id": message_id,
+            "text": message_text,
+            "image_urls": [image_urls]
+        }
+    ]
+    ```
+    '''
+    result = []
+    parsed = await parse_messages(before=0)
+    if parsed is None:
+        raise Exception('Не удалось спарсить сообщения')
+    last_msg_id = parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
+    msg_id = 0
+    count = 1
+
+    while msg_id < last_msg_id:
+        parsed = await parse_messages(after=count)
+        if parsed is not None:
+            count += len(parsed)
+            for m in parsed:
+                result.append(m)
+                # logger.info(json.dumps(m, ensure_ascii=False, indent=2))
+        await asyncio.sleep(random.randint(2, 5))
+    return result

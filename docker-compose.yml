@@ -7,9 +7,10 @@ services:
       args:
         - POETRY_VERSION=${POETRY_VERSION}
     volumes:
-      - .env:/app/.env
+      - ./.env:/app/.env
       - ./src:/app/src
       - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
       - ./poetry.lock:/app/poetry.lock
       - ./pyproject.toml:/app/pyproject.toml
       - ./Dockerfile:/app/Dockerfile
@@ -18,13 +19,15 @@ services:
       - "5678:5678"
   
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
     env_file:
       - .env
   
   db:
     container_name: postgres_db
-    image: postgres
+    image: postgres:${POSTGRES__VERSION}
     restart: always
     ports:
       - "${POSTGRES__PORT}:${POSTGRES__PORT}"
@@ -38,6 +41,16 @@ services:
     env_file:
       - .env
 
+    volumes:
+      - ./data/pgsql:/var/lib/postgresql/${POSTGRES__VERSION}/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER}"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+
+
   minio:
     container_name: minio
     image: minio/minio:latest
@@ -49,13 +62,12 @@ services:
     env_file:
       - .env
     volumes:
-      - minio_data:/data
+      - ./data/minio:/data
     environment:
       # MINIO_ROOT_USER: ${MINIO__ROOT_USER}
       # MINIO_ROOT_PASSWORD: ${MINIO__ROOT_PASSWORD}
       MINIO_ACCESS_KEY: ${MINIO__ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO__SECRET_KEY}
-
 
 volumes:
   minio_data:

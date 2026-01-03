@@ -1,12 +1,8 @@
+from functools import partial
 from aiogram import types, F, Router
 from aiogram.filters import Command, CommandStart
-from aiogram.enums import ParseMode
-import json
-import asyncio
-import random
-from logger import logger
-
-from tg.parser import parse_messages
+from tg.parser import parse_messages_all
+from message.services.service import MessageService
 
 router = Router()
 
@@ -19,19 +15,11 @@ async def send_welcome(message: types.Message) -> None:
 @router.message(Command('parse'))
 async def update_messages_base(message: types.Message) -> None:
     await message.answer('Ответ займет продолжительное время...')
-    parsed = await parse_messages(before=0)
-    if parsed is not None:
-        last_msg_id = parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
-        msg_id = 0
-        count = 1
-
-        while msg_id < last_msg_id:
-            parsed = await parse_messages(after=count)
-            if parsed is not None:
-                count += len(parsed)
-                for m in parsed:
-                    logger.info(json.dumps(m, ensure_ascii=False, indent=2))
-                    await message.answer('\n'.join(m['image_urls']))
-            await asyncio.sleep(random.randint(2, 5))
+    try:
+        messages = await parse_messages_all()
+    except Exception as e:
+        await message.answer(f'Произошла ошибка: {str(e)}')
     else:
-        await message.answer('Не удалось спарсить сообщения')
+        for m in messages:
+            # TODO сделать добавление сообщений в бд
+            ...

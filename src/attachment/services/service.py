@@ -34,13 +34,20 @@ class AttachmentService(BaseService[AttachmentModel]):
     async def upload_files(
         self,
         *tg_msg_data: tuple[str, str]
-    ) -> None:
+    ) -> AttachmentModel | None:
         '''
         Загрузка медиафайлов в MinIO и MinIO-ссылок на них в БД
+
+        Args:
+            tg_msg_data (tuple[str, str]): ID сообщения и URL медиа-контента
+
+        Returns:
+            AttachmentModel|None: SQL-Alchemy созданного медиа-контента
 
         Raises:
             WasNotCreatedError: Не удалось загрузить в MinIO
             FileIsTooLargeError: Файл слишком большой для MinIO
+            AlreadyExistsError: Данный медиафайл уже загружен
             Exception: Прочие ошибки MinIO
         '''
         for message_id, file_url in tg_msg_data:
@@ -66,7 +73,7 @@ class AttachmentService(BaseService[AttachmentModel]):
             }
             if await self.exists(filter, raise_exc=False):
                 raise AlreadyExistsError('Данный медиафайл уже загружен')
-            await self.create(model)
+            return await self.create(model)
 
     async def __download_file(self, url: str) -> tuple[BytesIO, str, str]:
         '''

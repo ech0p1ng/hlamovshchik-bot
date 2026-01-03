@@ -24,6 +24,7 @@ class PostgresSettings(BaseSettings):
     db: str
     user: str
     password: str
+    version: int
 
     db_dsn: str = ''
     db_dsn_sync: str = ''

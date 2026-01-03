@@ -1,8 +1,10 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from base.model import BaseModel
 from attachment.schemas.schema import (
     AttachmentSchema, AttachmentSimpleSchema, AttachmentMinioSchema
 )
+from message.models.model import MessageModel
 
 
 class AttachmentModel(BaseModel):
@@ -18,7 +20,7 @@ class AttachmentModel(BaseModel):
         file_extension (Mapped[str]): Расширение файла
         file_size (Mapped[int]): Размер файла в байтах
     '''
-    __tablename__ = 'attachment'
+    __tablename__ = 'attachments'
 
     tg_msg_id: Mapped[str] = mapped_column(nullable=False)
     tg_file_url: Mapped[str] = mapped_column(nullable=False)
@@ -26,6 +28,12 @@ class AttachmentModel(BaseModel):
     file_name: Mapped[str] = mapped_column()
     file_extension: Mapped[str] = mapped_column()
     file_size: Mapped[int] = mapped_column()
+
+    message_id: Mapped[int] = mapped_column(ForeignKey('messages.id'))
+    message: Mapped['MessageModel'] = relationship(
+        back_populates='attachments',
+        lazy='selectin',
+    )
 
     def __eq__(self, value: object) -> bool:
 
