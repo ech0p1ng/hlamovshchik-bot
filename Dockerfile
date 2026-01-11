@@ -22,13 +22,15 @@ ENV PYTHONPATH=/app/src
 
 RUN chmod +x /app/entrypoint.sh
 
+RUN poetry install --no-root
+
 ENTRYPOINT ["/app/entrypoint.sh"]
 
 
-# FROM base AS dev
+FROM base AS dev
 
-# ENV PYTHONPATH=/app/src
+ENV PYTHONPATH=/app/src
 
-# RUN chmod +x /app/entrypoint-dev.sh
+RUN chmod +x /app/entrypoint-dev.sh
 
-# ENTRYPOINT ["/app/entrypoint-dev.sh"]
+ENTRYPOINT ["/app/entrypoint-dev.sh"]

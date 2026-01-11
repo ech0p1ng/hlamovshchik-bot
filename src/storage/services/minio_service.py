@@ -8,7 +8,7 @@ from minio import Minio
 from minio.error import S3Error
 from urllib3 import PoolManager, disable_warnings
 
-from config import settings
+from config import get_settings
 from exceptions.exception import FileIsTooLargeError, WasNotCreatedError
 from attachment.schemas.schema import AttachmentMinioSchema
 
@@ -52,6 +52,7 @@ class MinioService:
             }
         )
         self.client.set_bucket_policy(self._bucket_name, __policy)
+        self.__settings = get_settings()
 
     @classmethod
     def __split_file_name(cls, full_file_name: str) -> tuple[str, str]:
@@ -121,10 +122,10 @@ class MinioService:
             file_size = os.fstat(file.fileno()).st_size
             url = self.get_file_url(full_file_name)
 
-            if file_size > settings.attachment.max_size:
+            if file_size > self.__settings.attachment.max_size:
                 raise FileIsTooLargeError(
                     "Максимальный размер файла - "
-                    f"{settings.attachment.max_size / 1024} Кбайт"
+                    f"{self.__settings.attachment.max_size / 1024} Кбайт"
                 )
             else:
                 await asyncio.to_thread(
@@ -163,4 +164,4 @@ class MinioService:
         Returns:
             str: URL файла в MinIO
         '''
-        return f"{settings.minio.endpoint}/{self.bucket_name}/{file_name}"
+        return f"{self.__settings.minio.endpoint}/{self.bucket_name}/{file_name}"

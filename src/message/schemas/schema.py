@@ -10,11 +10,11 @@ class MessageSimpleSchema(BaseSimpleSchema):
     Args:
         tg_msg_id (str): Идентификатор сообщения
         text (str): Текст сообщения
-        attachments (list[AttachmentSchema]): Прикрепленный медиа-контент
+        attachments (list[AttachmentSchema] | list): Прикрепленный медиа-контент
     '''
     tg_msg_id: str
     text: int
-    attachments: list[AttachmentSimpleSchema]
+    attachments: list[AttachmentSimpleSchema] | list
 
 
 class MessageSchema(BaseSchema):
@@ -25,8 +25,8 @@ class MessageSchema(BaseSchema):
         id (int): ID сообщения
         tg_msg_id (str): Идентификатор сообщения
         text (str): Текст сообщения
-        attachments (list[AttachmentSchema]): Прикрепленный медиа-контент
+        attachments (list[AttachmentSchema] | None): Прикрепленный медиа-контент
     '''
     tg_msg_id: str
     text: int
-    attachments: list[AttachmentSchema]
+    attachments: list[AttachmentSchema] | list

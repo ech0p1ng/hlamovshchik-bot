@@ -25,6 +25,7 @@ class PostgresSettings(BaseSettings):
     user: str
     password: str
     version: int
+    dump_timeout_seconds: int
 
     db_dsn: str = ''
     db_dsn_sync: str = ''
@@ -47,6 +48,7 @@ class TelegramSettings(BaseSettings):
     bot_token: str
     channel_id: str
     channel_name: str
+    chat_id: int
 
 
 class AttachmentSettings(BaseSettings):
@@ -75,4 +77,5 @@ class Settings(BaseSettings):
         extra='ignore')
 
 
-settings = Settings()  # type: ignore
+def get_settings() -> Settings:
+    return Settings() #type: ignore

@@ -34,7 +34,7 @@ class AttachmentService(BaseService[AttachmentModel]):
     async def upload_files(
         self,
         *tg_msg_data: tuple[str, str]
-    ) -> AttachmentModel | None:
+    ) -> list[AttachmentModel] | None:
         '''
         Загрузка медиафайлов в MinIO и MinIO-ссылок на них в БД
 
@@ -42,7 +42,7 @@ class AttachmentService(BaseService[AttachmentModel]):
             tg_msg_data (tuple[str, str]): ID сообщения и URL медиа-контента
 
         Returns:
-            AttachmentModel|None: SQL-Alchemy созданного медиа-контента
+            list[AttachmentModel]|None: SQL-Alchemy созданного медиа-контента
 
         Raises:
             WasNotCreatedError: Не удалось загрузить в MinIO
@@ -50,30 +50,29 @@ class AttachmentService(BaseService[AttachmentModel]):
             AlreadyExistsError: Данный медиафайл уже загружен
             Exception: Прочие ошибки MinIO
         '''
+        models = []
         for message_id, file_url in tg_msg_data:
             response = await self.__download_file(file_url)
             try:
                 minio_schema = await self.minio_service.upload_file(*response)
-            except S3Error as exc:
-                raise WasNotCreatedError(f"MinIO: {exc}")
-            except FileIsTooLargeError as exc:
-                raise FileIsTooLargeError(f"MinIO: {exc}")
             except Exception as exc:
                 raise Exception(f'MinIO: {exc}')
+            else:
+                # TODO Проверить работу в MinIO через докер
+                model = AttachmentModel.from_schema(
+                    minio_schema,
+                    tg_msg_id=message_id,
+                    tg_file_url=file_url,
+                )
 
-            # TODO Проверить работу в MinIO через докер
-            model = AttachmentModel.from_schema(
-                minio_schema,
-                tg_msg_id=message_id,
-                tg_file_url=file_url,
-            )
-
-            filter = {
-                'tg_file_url': file_url
-            }
-            if await self.exists(filter, raise_exc=False):
-                raise AlreadyExistsError('Данный медиафайл уже загружен')
-            return await self.create(model)
+                filter = {
+                    'tg_file_url': file_url
+                }
+                if await self.exists(filter, raise_exc=False):
+                    raise AlreadyExistsError('Данный медиафайл уже загружен')
+                model = await self.create(model)
+                models.append(model)
+        return models
 
     async def __download_file(self, url: str) -> tuple[BytesIO, str, str]:
         '''

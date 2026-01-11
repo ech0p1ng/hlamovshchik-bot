@@ -1,8 +1,8 @@
 from functools import partial
 from aiogram import types, F, Router
 from aiogram.filters import Command, CommandStart
-from tg.parser import parse_messages_all
-from message.services.service import MessageService
+from dependencies import get_message_service
+from db.database import get_db
 
 router = Router()
 
@@ -12,14 +12,8 @@ async def send_welcome(message: types.Message) -> None:
     await message.answer("Привет! Я асинхронный бот на aiogram 🚀")
 
 
-@router.message(Command('parse'))
-async def update_messages_base(message: types.Message) -> None:
-    await message.answer('Ответ займет продолжительное время...')
-    try:
-        messages = await parse_messages_all()
-    except Exception as e:
-        await message.answer(f'Произошла ошибка: {str(e)}')
-    else:
-        for m in messages:
-            # TODO сделать добавление сообщений в бд
-            ...
+@router.message(Command("parse"))
+async def update_messages_base(message: types.Message):
+    async for db in get_db():
+        message_service = await get_message_service(db)
+        await message_service.update_all()

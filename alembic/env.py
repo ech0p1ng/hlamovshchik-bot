@@ -6,14 +6,14 @@ from alembic import context
 from base.model import BaseModel
 from attachment.models.model import AttachmentModel
 from message.models.model import MessageModel
-from config import settings
+from config import get_settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 config.set_main_option(
     'sqlalchemy.url',
-    settings.postgres.db_dsn_sync
+    get_settings().postgres.db_dsn_sync
 )
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
