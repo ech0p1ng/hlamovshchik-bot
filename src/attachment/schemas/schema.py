@@ -28,7 +28,7 @@ class AttachmentMinioSchema(AttachmentSimpleSchema):
         file_size (int): Размер файла (байт)
     '''
 
-    minio_file_url: str | None
+    # minio_file_url: str | None
 
 
 class AttachmentSchema(AttachmentMinioSchema):

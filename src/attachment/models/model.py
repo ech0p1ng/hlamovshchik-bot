@@ -26,9 +26,9 @@ class AttachmentModel(BaseModel):
         ForeignKey('message.tg_msg_id', ondelete='CASCADE'),
         nullable=False
     )
-    
+
     tg_file_url: Mapped[str] = mapped_column(nullable=False)
-    minio_file_url: Mapped[str] = mapped_column(nullable=False)
+    # minio_file_url: Mapped[str] = mapped_column(nullable=False)
     file_name: Mapped[str] = mapped_column()
     file_extension: Mapped[str] = mapped_column()
     file_size: Mapped[int] = mapped_column()
@@ -77,7 +77,7 @@ class AttachmentModel(BaseModel):
         '''
         if type(schema) is AttachmentSchema:
             return cls(
-                minio_file_url=schema.minio_file_url,
+                # minio_file_url=schema.minio_file_url,
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
                 file_size=schema.file_size,
@@ -86,7 +86,7 @@ class AttachmentModel(BaseModel):
             return cls(
                 tg_msg_id=tg_msg_id,
                 tg_file_url=tg_file_url,
-                minio_file_url=schema.minio_file_url,
+                # minio_file_url=schema.minio_file_url,
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
                 file_size=schema.file_size,

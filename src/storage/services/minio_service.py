@@ -142,8 +142,8 @@ class MinioService:
                 )
 
                 return AttachmentMinioSchema(
-                    minio_file_url='http://' + url,
-                    file_name=str(file_name),
+                    # minio_file_url='http://' + url,
+                    file_name=safe_name,
                     file_extension=file_ext,
                     file_size=file_size
                 )
@@ -168,4 +168,4 @@ class MinioService:
         Returns:
             str: URL файла в MinIO
         '''
-        return f"{self.__settings.minio.endpoint}/{self.bucket_name}/{file_name}"
+        return f"http://{self.__settings.minio.endpoint}/{self.bucket_name}/{file_name}"
