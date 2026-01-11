@@ -16,4 +16,5 @@ async def send_welcome(message: types.Message) -> None:
 async def update_messages_base(message: types.Message):
     async for db in get_db():
         message_service = await get_message_service(db)
+        # TODO: проверка работы с БД
         await message_service.update_all()

@@ -51,6 +51,7 @@ services:
       start_period: 10s
 
   db_backup:
+    container_name: db_backup
     image: postgres:${POSTGRES__VERSION}
     depends_on:
       db:

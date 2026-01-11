@@ -6,6 +6,7 @@ from alembic import context
 from base.model import BaseModel
 from attachment.models.model import AttachmentModel
 from message.models.model import MessageModel
+from global_var.models.model import GlobalVarModel
 from config import get_settings
 
 # this is the Alembic Config object, which provides

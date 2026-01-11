@@ -38,6 +38,7 @@ class MessageService(BaseService[MessageModel]):
         self.attachment_service = attachment_service
         self.logger = logging.getLogger('tg_logger')
         self.__settings = get_settings()
+        self.__parsed_messages_at_once = 15
 
     async def create(
         self,
@@ -135,7 +136,7 @@ class MessageService(BaseService[MessageModel]):
             messages = soup.select('.tgme_widget_message_wrap.js-widget_message_wrap')
             parsed_data = []
             for i, m in enumerate(messages):
-                if i > 15:
+                if i > self.__parsed_messages_at_once:
                     break
                 parsed_data.append(await self.__parse_data(m))
             return parsed_data
@@ -146,7 +147,7 @@ class MessageService(BaseService[MessageModel]):
             raise Exception('Не удалось спарсить сообщения')
         return parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
 
-    async def __parse_messages_all(self) -> list[dict[str, Any]]:
+    async def update_all(self) -> list[MessageModel]:
         '''
         Парсинг всех сообщений из канала
 
@@ -165,7 +166,7 @@ class MessageService(BaseService[MessageModel]):
         ]
         ```
         '''
-        result = []
+        models = []
         last_msg_id = await self.__get_last_msg_id()
         msg_id = 0
         count = 1
@@ -175,28 +176,36 @@ class MessageService(BaseService[MessageModel]):
             if parsed is not None:
                 count += len(parsed)
                 for m in parsed:
-                    result.append(m)
-                    # logger.info(json.dumps(m, ensure_ascii=False, indent=2))
+                    files: list[tuple[str, str]] = [(m['id'], img) for img in m['image_urls']]
+                    attachments = await self.attachment_service.upload_files(*files) or []
+                    schema = MessageSimpleSchema(
+                        tg_msg_id=m['id'],
+                        text=m['text'],
+                        attachments=[AttachmentSchema.model_validate(a) for a in attachments]
+                    )
+                    model = await self.create(MessageModel.from_schema(schema))
+                    models.append(model)
+                    self.logger.info(f'Парсинг {m['id']} из {last_msg_id} сообщений...')
             await asyncio.sleep(random.randint(2, 5))
-        return result
-
-    async def update_all(self) -> list[MessageModel]:
-        models = []
-        self.logger.info('Обновление займет продолжительное время...')
-        try:
-            messages = await self.__parse_messages_all()
-        except Exception as e:
-            self.logger.error(f'Произошла ошибка: {str(e)}')
-        else:
-            for m in messages:
-                files: list[tuple[str, str]] = [(m['id'], img) for img in m['image_urls']]
-                attachments = await self.attachment_service.upload_files(*files) or []
-                schema = MessageSimpleSchema(
-                    tg_msg_id=m['id'],
-                    text=m['text'],
-                    attachments=[AttachmentSchema.model_validate(a) for a in attachments]
-                )
-                model = MessageModel.from_schema(schema)
-                model = await self.create(model)
-                models.append(model)
         return models
+
+    # async def update_all(self) -> list[MessageModel]:
+    #     models = []
+    #     self.logger.info('Обновление займет продолжительное время...')
+    #     try:
+    #         messages = await self.__parse_messages_all()
+    #     except Exception as e:
+    #         self.logger.error(f'Произошла ошибка: {str(e)}')
+    #     else:
+    #         for m in messages:
+    #             files: list[tuple[str, str]] = [(m['id'], img) for img in m['image_urls']]
+    #             attachments = await self.attachment_service.upload_files(*files) or []
+    #             schema = MessageSimpleSchema(
+    #                 tg_msg_id=m['id'],
+    #                 text=m['text'],
+    #                 attachments=[AttachmentSchema.model_validate(a) for a in attachments]
+    #             )
+    #             model = MessageModel.from_schema(schema)
+    #             model = await self.create(model)
+    #             models.append(model)
+    #     return models

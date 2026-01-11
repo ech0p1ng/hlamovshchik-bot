@@ -118,8 +118,12 @@ class MinioService:
         await self.__ensure_bucket_exists()
 
         try:
-            full_file_name = f'{uuid.uuid4()}-{file_name}.{file_ext}'
-            file_size = os.fstat(file.fileno()).st_size
+            safe_name = uuid.uuid4().hex
+            full_file_name = f"{safe_name}.{file_ext.lower()}"
+
+            file.seek(0, os.SEEK_END)
+            file_size = file.tell()
+            file.seek(0)
             url = self.get_file_url(full_file_name)
 
             if file_size > self.__settings.attachment.max_size:

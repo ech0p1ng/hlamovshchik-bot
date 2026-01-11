@@ -19,13 +19,13 @@ class MessageModel(BaseModel):
         text (Mapped[str]): Текст сообщения
         attachment_id (Mapped[int]): ID медиа-контента
     '''
-    __tablename__ = 'messages'
+    __tablename__ = 'message'
 
     tg_msg_id: Mapped[str] = mapped_column(nullable=False)
     text: Mapped[str] = mapped_column()
 
-    attachments: Mapped[list['AttachmentModel']] = relationship(
-        back_populates='messages',
+    attachment: Mapped[list['AttachmentModel']] = relationship(
+        back_populates='message',
         uselist=True,
         cascade='all, delete-orphan',
         lazy='selectin',
