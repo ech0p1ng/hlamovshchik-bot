@@ -36,7 +36,7 @@ class AttachmentSchema(AttachmentMinioSchema):
     Упрощенная Pydantic-схема медиа-контента, прикрепляемого к теме
 
     Args:
-        tg_msg_id (str): Идентификатор сообщения
+        tg_msg_id (int): Идентификатор сообщения
         tg_file_url (str): URL файла на серверах telegram
         minio_file_url (str): Ссылка на файл в MinIO
         file_name (str): Имя файла
@@ -44,5 +44,5 @@ class AttachmentSchema(AttachmentMinioSchema):
         file_size (int): Размер файла (байт)
     '''
 
-    tg_msg_id: str
+    tg_msg_id: int
     tg_file_url: str

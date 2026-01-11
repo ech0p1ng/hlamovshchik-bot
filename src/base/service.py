@@ -155,7 +155,7 @@ class BaseService[M]:
             NotFoundError: Не удалось найти сущность
         '''
 
-        if not await self.exists(filter):
+        if not await self.exists(filter, raise_exc=False):
             raise self._not_found_by_filter_error(filter)
 
         try:

@@ -11,7 +11,7 @@ import logging
 
 from base.service import BaseService
 from message.models.model import MessageModel
-from message.schemas.schema import MessageSimpleSchema
+from message.schemas.schema import MessageCreateSchema
 from message.repositories.repository import MessageRepository
 from attachment.services.service import AttachmentService
 from attachment.models.model import AttachmentModel
@@ -35,6 +35,7 @@ class MessageService(BaseService[MessageModel]):
             single_model_name="сообщение",
             multiple_models_name="сообщения"
         )
+        self.db = db
         self.attachment_service = attachment_service
         self.logger = logging.getLogger('tg_logger')
         self.__settings = get_settings()
@@ -61,13 +62,22 @@ class MessageService(BaseService[MessageModel]):
         if not files_info:
             return await super().create(model)
 
-        for f in files_info:
-            attachments = await self.attachment_service.upload_files(f)
-            model.attachments = attachments or []
+        # model.attachments = []
+        filter = {'tg_msg_id': model.tg_msg_id}
+        if await self.exists(filter, raise_exc=False):
+            existing = await self.get(filter)
+            existing.text = model.text
+            existing.attachments = model.attachments
+            model = await super().update(existing, filter)
+        else:
+            model = await super().create(model)
 
-        return await super().create(model)
+        attachments = await self.attachment_service.upload_files(*files_info)
+        model.attachments = attachments or []
+        await self.db.commit()  # вот это добавит запись в БД
+        await self.db.refresh(model)  # чтобы обновился объект с DB
 
-    # async def update_all():
+        return model
 
     async def __parse_data(self, message: Tag) -> dict[str, Any]:
         message_text = message.select('.tgme_widget_message_text.js-message_text')
@@ -147,7 +157,7 @@ class MessageService(BaseService[MessageModel]):
             raise Exception('Не удалось спарсить сообщения')
         return parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
 
-    async def update_all(self) -> list[MessageModel]:
+    async def upload_all(self) -> list[MessageModel]:
         '''
         Парсинг всех сообщений из канала
 
@@ -166,6 +176,7 @@ class MessageService(BaseService[MessageModel]):
         ]
         ```
         '''
+        self.logger.info('Обновление займет продолжительное время...')
         models = []
         last_msg_id = await self.__get_last_msg_id()
         msg_id = 0
@@ -177,35 +188,17 @@ class MessageService(BaseService[MessageModel]):
                 count += len(parsed)
                 for m in parsed:
                     files: list[tuple[str, str]] = [(m['id'], img) for img in m['image_urls']]
-                    attachments = await self.attachment_service.upload_files(*files) or []
-                    schema = MessageSimpleSchema(
+                    # attachments = await self.attachment_service.upload_files(*files) or []
+                    schema = MessageCreateSchema(
                         tg_msg_id=m['id'],
                         text=m['text'],
-                        attachments=[AttachmentSchema.model_validate(a) for a in attachments]
                     )
-                    model = await self.create(MessageModel.from_schema(schema))
+                    model = await self.create(
+                        model=MessageModel.from_schema(schema),
+                        files_info=files
+                    )
                     models.append(model)
                     self.logger.info(f'Парсинг {m['id']} из {last_msg_id} сообщений...')
+                    msg_id = m['id']
             await asyncio.sleep(random.randint(2, 5))
         return models
-
-    # async def update_all(self) -> list[MessageModel]:
-    #     models = []
-    #     self.logger.info('Обновление займет продолжительное время...')
-    #     try:
-    #         messages = await self.__parse_messages_all()
-    #     except Exception as e:
-    #         self.logger.error(f'Произошла ошибка: {str(e)}')
-    #     else:
-    #         for m in messages:
-    #             files: list[tuple[str, str]] = [(m['id'], img) for img in m['image_urls']]
-    #             attachments = await self.attachment_service.upload_files(*files) or []
-    #             schema = MessageSimpleSchema(
-    #                 tg_msg_id=m['id'],
-    #                 text=m['text'],
-    #                 attachments=[AttachmentSchema.model_validate(a) for a in attachments]
-    #             )
-    #             model = MessageModel.from_schema(schema)
-    #             model = await self.create(model)
-    #             models.append(model)
-    #     return models

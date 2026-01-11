@@ -13,7 +13,7 @@ class AttachmentModel(BaseModel):
 
     Args:
         id (int): Идентификатор
-        tg_msg_id (Mapped[str]): Идентификатор сообщения
+        tg_msg_id (Mapped[int]): Идентификатор сообщения
         tg_file_url (Mapped[str]): URL файла на серверах telegram
         minio_file_url (Mapped[str]): Адрес хранения файла
         file_name (Mapped[str]): Имя файла
@@ -22,16 +22,21 @@ class AttachmentModel(BaseModel):
     '''
     __tablename__ = 'attachment'
 
-    tg_msg_id: Mapped[str] = mapped_column(nullable=False)
+    tg_msg_id: Mapped[int] = mapped_column(
+        ForeignKey('message.tg_msg_id', ondelete='CASCADE'),
+        nullable=False
+    )
+    
     tg_file_url: Mapped[str] = mapped_column(nullable=False)
     minio_file_url: Mapped[str] = mapped_column(nullable=False)
     file_name: Mapped[str] = mapped_column()
     file_extension: Mapped[str] = mapped_column()
     file_size: Mapped[int] = mapped_column()
 
-    message_id: Mapped[int] = mapped_column(ForeignKey('message.id'))
     message: Mapped['MessageModel'] = relationship(
-        back_populates='attachment',
+        'MessageModel',
+        back_populates='attachments',
+        foreign_keys=[tg_msg_id],
         lazy='selectin',
     )
 
