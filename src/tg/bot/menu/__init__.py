@@ -19,9 +19,20 @@ async def send_welcome(message: types.Message) -> None:
 
 @router.message(Command("parse"))
 async def update_messages_base(message: types.Message):
+    await message.answer('Запуск парсинга...')
+    show_msg = True
     async for db in get_db():
         message_service = await get_message_service(db)
-        await message_service.upload_all()
+        async for msg in message_service.upload_all():
+            if show_msg:
+                current = msg['current']
+                last = msg['last']
+                total = msg['total']
+                output = (f'Парсинг...\n\n'
+                          f'Текущее: ID {current}\n'
+                          f'Последнее: ID {last}\n'
+                          f'Кол-во сообщений за этот момент: {total}')
+                await message.answer(output)
 
 
 @router.message(Command("find"))

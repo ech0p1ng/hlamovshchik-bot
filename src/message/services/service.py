@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, AsyncGenerator
 import async_requests
 from attachment.schemas.schema import AttachmentSchema
 from base.model import BaseModel
@@ -159,33 +159,33 @@ class MessageService(BaseService[MessageModel]):
             raise Exception('Не удалось спарсить сообщения')
         return parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
 
-    async def upload_all(self) -> list[MessageModel]:
+    async def upload_all(self) -> AsyncGenerator[dict[str, Any]]:
         '''
         Парсинг всех сообщений из канала
 
         Raises:
             Exception: Не удалось спарсить сообщения
 
-        Returns:
-            list[dict[str,Any]]: Спаршенные сообщения в формате 
+        Yields:
+            dict[str,int]: Прогресс парсинга 
         ```
-        [
-            {
-                "id": message_id,
-                "text": message_text,
-                "image_urls": [image_urls]
-            }
-        ]
+        {
+            "current": msg_id, [int]
+            "last": last_msg_id [int]
+            "messages": messages [list]
+            "total": messages_count [int]
+        }
         ```
         '''
         self.logger.info('Обновление займет продолжительное время...')
-        models = []
         last_msg_id = await self.__get_last_msg_id()
         msg_id = 0
         count = 1
 
         while msg_id < last_msg_id:
             parsed = await self.__parse_messages(after=count)
+            models = []
+            # TODO: Исправить почему парсятся сообщения только до ID 1494
             if parsed is not None:
                 count += len(parsed)
                 for m in parsed:
@@ -200,10 +200,16 @@ class MessageService(BaseService[MessageModel]):
                         files_info=files
                     )
                     models.append(model)
-                    self.logger.info(f'Парсинг {m['id']} из {last_msg_id} сообщений...')
                     msg_id = m['id']
+
+                yield {
+                    'current': int(msg_id),
+                    'last': int(last_msg_id),
+                    'messages': models,
+                    'total': len(models),
+                }
             await asyncio.sleep(random.randint(2, 5))
-        return models
+        # return models
 
     async def find_with_value(
         self,
