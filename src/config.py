@@ -16,6 +16,7 @@ class MinioSettings(BaseSettings):
     port: int
     port_secure: int
     endpoint: str
+    ip_address: str
 
 
 class PostgresSettings(BaseSettings):
@@ -54,6 +55,8 @@ class TelegramSettings(BaseSettings):
 class AttachmentSettings(BaseSettings):
     max_size: int
     extensions: List[str]
+    video_extensions: List[str]
+    image_extensions: List[str]
 
 
 class Settings(BaseSettings):
@@ -78,4 +81,4 @@ class Settings(BaseSettings):
 
 
 def get_settings() -> Settings:
-    return Settings() #type: ignore
+    return Settings()  # type: ignore

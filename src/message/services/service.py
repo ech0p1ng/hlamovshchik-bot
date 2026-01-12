@@ -1,6 +1,7 @@
 from typing import Any
 import async_requests
 from attachment.schemas.schema import AttachmentSchema
+from base.model import BaseModel
 from config import get_settings
 from bs4 import Tag
 from bs4 import BeautifulSoup as bs
@@ -8,6 +9,7 @@ import random
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
+from sqlalchemy.orm.strategy_options import _AttrType
 
 from base.service import BaseService
 from message.models.model import MessageModel
@@ -74,8 +76,8 @@ class MessageService(BaseService[MessageModel]):
 
         attachments = await self.attachment_service.upload_files(*files_info)
         model.attachments = attachments or []
-        await self.db.commit()  # вот это добавит запись в БД
-        await self.db.refresh(model)  # чтобы обновился объект с DB
+        await self.db.commit()
+        await self.db.refresh(model)
 
         return model
 
@@ -202,3 +204,10 @@ class MessageService(BaseService[MessageModel]):
                     msg_id = m['id']
             await asyncio.sleep(random.randint(2, 5))
         return models
+
+    async def find_with_value(
+        self,
+        filter: dict[str, Any],
+        model_attrs: list[_AttrType] = [MessageModel.attachments]
+    ) -> list[MessageModel]:
+        return await super().find_with_value(filter, model_attrs)

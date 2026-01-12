@@ -2,7 +2,7 @@ from io import BytesIO
 from minio import S3Error
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from async_requests import get
+from async_requests import download_file
 from base.service import BaseService
 from attachment.models.model import AttachmentModel
 from attachment.schemas.schema import AttachmentSchema
@@ -52,13 +52,15 @@ class AttachmentService(BaseService[AttachmentModel]):
         '''
         models = []
         for message_id, file_url in tg_msg_data:
-            response = await self.__download_file(file_url)
+            response = await download_file(file_url)
             try:
-                minio_schema = await self.minio_service.upload_file(*response)
+                minio_schema = await self.minio_service.upload_file(
+                    file=response['file'],
+                    file_ext=response['ext']
+                )
             except Exception as exc:
                 raise Exception(f'MinIO: {exc}')
             else:
-                # TODO Проверить работу в MinIO через докер
                 model = AttachmentModel.from_schema(
                     minio_schema,
                     tg_msg_id=message_id,
@@ -73,23 +75,3 @@ class AttachmentService(BaseService[AttachmentModel]):
                 model = await self.create(model)
                 models.append(model)
         return models
-
-    async def __download_file(self, url: str) -> tuple[BytesIO, str, str]:
-        '''
-        Скачать файл из `url`
-
-        Args:
-            url (str): URL медиа-файла
-
-        Returns:
-            tuple[BytesIO,str,str]: Загруженный файл, его имя и расширение
-
-        Raises:
-            httpx.HTTPError: Не удалось загрузить `url`: `status_code`
-        '''
-        full_file_name = url.split('/')[-1]
-        file_ext = full_file_name.split('.')[-1]
-        file_name = full_file_name.replace(f'.{file_ext}', '')
-        response = await get(url)
-        file = BytesIO(response.content)
-        return file, file_name, file_ext

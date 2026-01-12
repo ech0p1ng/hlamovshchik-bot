@@ -95,7 +95,7 @@ class MinioService:
     async def upload_file(
         self,
         file: BytesIO,
-        file_name: str,
+        # file_name: str,
         file_ext: str
     ) -> AttachmentMinioSchema:
         '''
@@ -103,7 +103,6 @@ class MinioService:
 
         Args:
             file (BytesIO): Загружаемый файл
-            file_name (str): Имя файла
             file_ext (str): Расширение файла
 
         Returns:
@@ -124,7 +123,6 @@ class MinioService:
             file.seek(0, os.SEEK_END)
             file_size = file.tell()
             file.seek(0)
-            url = self.get_file_url(full_file_name)
 
             if file_size > self.__settings.attachment.max_size:
                 raise FileIsTooLargeError(
@@ -158,14 +156,28 @@ class MinioService:
     def bucket_name(self) -> str:
         return self._bucket_name
 
-    def get_file_url(self, file_name: str) -> str:
+    def get_local_file_url(self, file_name: str, file_ext: str) -> str:
         '''
-        Получение URL файла в MinIO
+        Получение закрытого URL файла в MinIO
 
         Args:
             file_name (str): Полное имя файла
+            file_ext (str): Расширение файла
 
         Returns:
             str: URL файла в MinIO
         '''
-        return f"http://{self.__settings.minio.endpoint}/{self.bucket_name}/{file_name}"
+        return f'http://{self.__settings.minio.endpoint}/{self.__settings.minio.bucket_name}/{file_name}.{file_ext}'
+
+    def get_global_file_url(self, file_name: str, file_ext: str) -> str:
+        '''
+        Получение открытого URL файла в MinIO
+
+        Args:
+            file_name (str): Полное имя файла
+            file_ext (str): Расширение файла
+
+        Returns:
+            str: URL файла в MinIO
+        '''
+        return f'http://{self.__settings.minio.ip_address}:{self.__settings.minio.port}/{self.__settings.minio.bucket_name}/{file_name}.{file_ext}'

@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from typing import Any, TypeVar
 from base.model import BaseModel
 from base.repository import BaseRepository
@@ -208,6 +209,43 @@ class BaseService[M]:
         if not models:
             raise self._not_found_error_for_list()
         return models
+
+    async def find_with_value(
+        self,
+        filter: dict[str, Any],
+        model_attrs: list[_AttrType] = []
+    ) -> list[M]:
+        """
+        Поиск сущностей с подгрузкой связанных моделей, если это необходимо.
+
+        Args:
+            filter (dict[str, Any]): Фильтр для поиска сущности в БД.
+            model_attrs (list[_AttrType]): Список атрибутов для подгрузки связанных моделей.
+
+        Returns:
+            list[BaseModel]: Список найденных сущностей с подгруженными аттрибутами.
+        """
+        results: list[M] = []
+        for col_name, values in filter.items():
+            column = getattr(self.model_class, col_name)
+
+            if isinstance(values, list):
+                statement = select(self.model_class).filter(
+                    or_(*[column.ilike(f"%{term}%") for term in values])
+                )
+            else:
+                statement = select(self.model_class).filter(
+                    column.ilike(f"%{values}%")
+                )
+            self._add_model_attrs_to_statement(statement, model_attrs)
+            query = await self.repository.db.execute(statement)
+
+            results.extend(query.scalars().all())
+
+        if not results:
+            raise NotFoundError(f'Не найдено ни одной сущности по фильтру: {filter}')
+
+        return results
 
     async def exists(
         self,

@@ -1,3 +1,5 @@
+from io import BytesIO
+from typing import Any
 import httpx
 
 
@@ -29,3 +31,35 @@ async def get(url: str) -> httpx.Response:
             msg = f'Не удалось загрузить {url}: {response.status_code}'
             raise httpx.HTTPError(msg)
         return response
+
+
+async def download_file(url: str) -> dict[str, Any]:
+    '''
+    Скачать файл из `url`
+
+    Args:
+        url (str): URL медиа-файла
+
+    Returns:
+        dict[str,Any]: Загруженный файл его имя и расширение
+    ```
+    {
+        "file": file,
+        "name": file_name,
+        "ext": file_ext
+    }
+    ```
+
+    Raises:
+        httpx.HTTPError: Не удалось загрузить `url`: `status_code`
+    '''
+    full_file_name = url.split('/')[-1]
+    file_ext = full_file_name.split('.')[-1]
+    file_name = full_file_name.replace('.' + file_ext, '')
+    response = await get(url)
+    file = BytesIO(response.content)
+    return {
+        'file': file,
+        'name': file_name,
+        'ext': file_ext
+    }
