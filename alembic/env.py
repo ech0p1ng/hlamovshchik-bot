@@ -7,6 +7,9 @@ from base.model import BaseModel
 from attachment.models.model import AttachmentModel
 from message.models.model import MessageModel
 from global_var.models.model import GlobalVarModel
+from user.models.model import UserModel
+from botcommand.models.model import BotCommandModel
+from role.models.model import RoleModel
 from config import get_settings
 
 # this is the Alembic Config object, which provides
