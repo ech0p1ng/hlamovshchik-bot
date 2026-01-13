@@ -3,7 +3,7 @@ services:
     container_name: app
     build: 
       dockerfile: ./Dockerfile
-      target: dev # server - для продакшена, dev - для разработки
+      target: devfast # server - для продакшена; dev - для разработки; devfast - для разработки, быстрое развертывание
       args:
         - POETRY_VERSION=${POETRY_VERSION}
     volumes:
