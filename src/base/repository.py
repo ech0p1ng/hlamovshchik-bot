@@ -2,13 +2,13 @@ from typing import Any, TypeVar
 from sqlalchemy import ScalarResult, Select, Delete
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
-from base.model import BaseModel
+from base.model import BaseModel, BaseSimpleModel
 
 
-T = TypeVar("T", bound=BaseModel)
+T = TypeVar("T", BaseModel, BaseSimpleModel)
 
 
-class BaseRepository[T: BaseModel]:
+class BaseRepository[T: BaseModel | BaseSimpleModel]:
     '''
     Базовый класс обработки данных из БД
 
@@ -55,7 +55,8 @@ class BaseRepository[T: BaseModel]:
         '''
         self.db.add(model)
         await self.db.flush()
-        await self.db.refresh(model)
+        if not isinstance(model, BaseSimpleModel):
+            await self.db.refresh(model)
         return model
 
     async def update(
@@ -80,7 +81,8 @@ class BaseRepository[T: BaseModel]:
         self.check_filters(filter)
         merged = await self.db.merge(model)
         await self.db.flush()
-        await self.db.refresh(merged)
+        if not isinstance(merged, BaseSimpleModel):
+            await self.db.refresh(merged)
         return merged
 
     async def delete(self, statement: Delete, filter: dict[str, Any]) -> None:

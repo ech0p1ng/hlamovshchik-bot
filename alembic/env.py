@@ -10,7 +10,7 @@ from global_var.models.model import GlobalVarModel
 from user.models.model import UserModel
 from botcommand.models.model import BotCommandModel
 from role.models.model import RoleModel
-from permission.table import permissions_table
+from permission.models.model import PermissionModel
 from config import get_settings
 
 # this is the Alembic Config object, which provides

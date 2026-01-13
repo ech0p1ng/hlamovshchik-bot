@@ -3,7 +3,9 @@ from sqlalchemy.orm import Mapped, relationship
 from base.model import BaseModel
 from role.schemas.schema import RoleSchema, RoleSimpleSchema
 from botcommand.models.model import BotCommandModel
-from permission.table import permissions_table
+from permission.models.model import PermissionModel
+# from permission.table import permissions_table
+
 
 if TYPE_CHECKING:
     from user.models.model import UserModel
@@ -25,12 +27,19 @@ class RoleModel(BaseModel):
         lazy='selectin',
     )
 
-    botcommands: Mapped[list['BotCommandModel']] = relationship(
-        back_populates='roles',
-        uselist=True,
-        secondary=permissions_table,
+    permissions = relationship(
+        'PermissionModel',
+        back_populates='role',
+        cascade='all, delete-orphan',
         lazy='selectin'
     )
+
+    botcommands = relationship(
+        'BotCommandModel',
+        secondary='permissions',
+        viewonly=True
+    )
+
 
     @classmethod
     def from_schema(cls, schema: RoleSchema | RoleSimpleSchema) -> 'RoleModel':

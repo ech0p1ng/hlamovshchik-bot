@@ -3,47 +3,96 @@ from io import BytesIO
 from aiogram import types, F, Router
 from aiogram.filters import Command, CommandStart
 from aiogram.types import BufferedInputFile, InputMediaPhoto, InputMediaVideo, InputMediaDocument, InputMediaAudio
+from typing import Any
 
 from async_requests import download_file
-from dependencies import get_message_service, get_minio_service, get_user_service
+from dependencies import get_message_service, get_minio_service, get_user_service, get_permission_service
 from db.database import get_db
 from config import get_settings
 from user.models.model import UserModel
 from user.schemas.schema import UserSimpleSchema
 
+
 router = Router()
+
+FORBIDDEN_MSG = f'Доступ запрещен'
+
+
+async def get_user(id: int, username: str | None) -> UserModel:
+    '''
+    Получить пользователя по его id и username
+
+    Raises:
+        RuntimeError: get_db() did not yield a session
+
+    Returns:
+        UserModel: SQLAlchemy модель пользователя
+    '''
+    filter = {'id': id}
+    async for db in get_db():
+        user_service = await get_user_service(db)
+        if await user_service.exists(filter, raise_exc=False):
+            return await user_service.get(filter)
+        return await user_service.create(UserModel.from_schema(
+            UserSimpleSchema(id=id, user_name=username, role_id=2)
+        ))
+    raise RuntimeError("get_db() did not yield a session")
+
+
+async def _check_permission(command: str, user: UserModel) -> bool:
+    '''
+    Проверка доступа пользователя к команде бота
+
+    Args:
+        command (str): Команда бота
+        user (UserModel): SQLAlchemy модель пользователя
+
+    Returns:
+        bool: `True` - доступ разрешен, `False` - доступ запрещен
+    '''
+    permitted = False
+    async for db in get_db():
+        permission_service = await get_permission_service(db)
+        permitted = await permission_service.check_permission(
+            command, user, raise_exc=False
+        )
+    return permitted
+
+
+async def check_permission(command: str, message: types.Message) -> tuple[bool, str]:
+    # ### ПРОВЕРКА ДОСТУПА ### #
+    error_msg = FORBIDDEN_MSG
+    if not message.from_user:
+        error_msg = f'{FORBIDDEN_MSG}\n\nЯ не отвечаю не пересланные от каналов или ботов сообщения'
+        return (False, error_msg)
+    user = await get_user(message.from_user.id, message.from_user.username)
+    permitted = await _check_permission(command, user)
+    return (permitted, '' if permitted else FORBIDDEN_MSG)
+    # ######################## #
 
 
 @router.message(CommandStart())
 async def send_welcome(message: types.Message) -> None:
-    if not message.from_user:
+    permitted, msg = await check_permission('start', message)
+    if not permitted:
+        await message.answer(msg)
         return
 
-    is_newbie = True
-    user: UserModel | None = None
-    id = message.from_user.id
-    username = message.from_user.username
-    filter = {'id': id}
-
-    async for db in get_db():
-        user_service = await get_user_service(db)
-        if await user_service.exists(filter, raise_exc=False):
-            user = await user_service.get(filter)
-            is_newbie = False
-        else:
-            user = await user_service.create(UserModel.from_schema(
-                UserSimpleSchema(id=id, user_name=username, role_id=2)
-            ))
-
-        if is_newbie:
-            msg = f"Привет, {user.user_name}! Я - Хламовщик, ищу картинки в Хламе по тексту в посте"
-        else:
-            msg = f'С возвращением, {user.user_name}!'
-        await message.answer(msg)
+    user = await get_user(message.from_user.id, message.from_user.username)  # type: ignore
+    await message.answer(
+        f"Привет, {user.user_name}! Я - Хламовщик, ищу картинки в Хламе по тексту в посте"
+    )
 
 
 @router.message(Command("parse"))
-async def update_messages_base(message: types.Message):
+async def update_messages_base(message: types.Message) -> None:
+    # ### ПРОВЕРКА ДОСТУПА ### #
+    permitted, msg = await check_permission('parse', message)
+    if not permitted:
+        await message.answer(msg)
+        return
+    # ######################## #
+
     await message.answer('Запуск парсинга...')
     show_msg = True
     async for db in get_db():
@@ -63,7 +112,14 @@ async def update_messages_base(message: types.Message):
 
 
 @router.message(Command("find"))
-async def find_message(message: types.Message):
+async def find_message(message: types.Message) -> None:
+    # ### ПРОВЕРКА ДОСТУПА ### #
+    permitted, msg = await check_permission('find', message)
+    if not permitted:
+        await message.answer(msg)
+        return
+    # ######################## #
+
     error_msg = "Пожалуйста, укажите текст для поиска."
     if not message.text:
         await message.reply(error_msg)

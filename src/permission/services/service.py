@@ -107,15 +107,15 @@ class PermissionService(BaseService[PermissionModel]):
 
     async def create_for_roles(
         self,
-        endpoint_name: str,
+        botcommand_name: str,
         *role_models: RoleModel,
-        create_endpoint: bool = True
+        create_botcommand: bool = True
     ) -> list[PermissionModel]:
         '''
         Создание ограничения доступа к команде бота по нескольким ролям
 
         Args:
-            endpoint_model (BotCommandModel): SQLAlchemy-модель ручки
+            botcommand_model (BotCommandModel): SQLAlchemy-модель ручки
             *role_models (RoleModel): SQLAlchemy-модели ролей
 
         Returns:
@@ -127,17 +127,17 @@ class PermissionService(BaseService[PermissionModel]):
                 по ролям не было создано
             NotFoundError: Роль не найдена
         '''
-        endpoint_exists = self.botcommand_service.exists(
-            {"name": endpoint_name},
+        botcommand_exists = self.botcommand_service.exists(
+            {"name": botcommand_name},
             raise_exc=False
         )
-        if endpoint_exists:
-            endpoint = await self.botcommand_service.get(
-                {"name": endpoint_name}
+        if botcommand_exists:
+            botcommand = await self.botcommand_service.get(
+                {"name": botcommand_name}
             )
-        elif create_endpoint:
-            endpoint = await self.botcommand_service.create_with_name(
-                endpoint_name
+        elif create_botcommand:
+            botcommand = await self.botcommand_service.create_with_name(
+                botcommand_name
             )
         else:
             raise NotFoundError('Ручка не найдена')
@@ -146,11 +146,11 @@ class PermissionService(BaseService[PermissionModel]):
         for role in role_models:
             filter = {
                 "role_id": role.id,
-                "endpoint_id": endpoint.id
+                "botcommand_id": botcommand.id
             }
             if not await self.exists(filter, raise_exc=False):
                 permission = await self.create_with_role_and_botcommand(
-                    endpoint, role
+                    botcommand, role
                 )
             else:
                 permission = await self.get(filter)
@@ -160,7 +160,7 @@ class PermissionService(BaseService[PermissionModel]):
 
     async def check_permission(
         self,
-        endpoint_name: str,
+        botcommand_name: str,
         user_model: UserModel,
         raise_exc: bool = True
     ) -> bool:
@@ -168,7 +168,7 @@ class PermissionService(BaseService[PermissionModel]):
         Проверка доступа к команде бота для пользователя
 
         Args:
-            endpoint_name (str): Название ручки
+            botcommand_name (str): Название ручки
             user_model (UserModel): SQLAlchemy-модель роли
 
         Returns:
@@ -180,14 +180,14 @@ class PermissionService(BaseService[PermissionModel]):
             ForbiddenError: Доступ запрещен
             NotFoundError: Ручка не найдена
         '''
-        endpoint: BotCommandModel = await self.botcommand_service.get({
-            "name": endpoint_name
+        botcommand: BotCommandModel = await self.botcommand_service.get({
+            "name": botcommand_name
         })
         if user_model is None:
             raise UnauthorizedError("Вы неавторизованы")
 
         filter = {
-            "endpoint_id": endpoint.id,
+            "botcommand_id": botcommand.id,
             "role_id": user_model.role.id
         }
         exists = await self.exists(filter, raise_exc=False)

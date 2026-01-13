@@ -43,12 +43,12 @@ class BotCommandService(BaseService[BotCommandModel]):
         else:
             return await self.get(filter)
 
-    async def create_with_name(self, endpoint_name: str) -> BotCommandModel:
+    async def create_with_name(self, botcommand_name: str) -> BotCommandModel:
         '''
         Создание команды бота
 
         Args:
-            endpoint_name (str): Имя команды бота
+            botcommand_name (str): Имя команды бота
 
         Returns:
             PermissionModel: SQLAlchemy-модель команды бота
@@ -59,7 +59,7 @@ class BotCommandService(BaseService[BotCommandModel]):
 
         model = BotCommandModel.from_schema(
             BotCommandSimpleSchema(
-                name=endpoint_name
+                name=botcommand_name
             )
         )
         return await self.create(model)

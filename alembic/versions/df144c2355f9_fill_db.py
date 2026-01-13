@@ -72,9 +72,12 @@ def upgrade() -> None:
             sa.column('botcommand_id', sa.Integer),
         ),
         [
-            {'role_id': 2, 'botcommand_id': 1},
-            {'role_id': 2, 'botcommand_id': 2},
-            {'role_id': 1, 'botcommand_id': 3},
+            {'role_id': 1, 'botcommand_id': 1}, # admin
+            {'role_id': 1, 'botcommand_id': 2}, # admin
+            {'role_id': 1, 'botcommand_id': 3}, # admin
+            
+            {'role_id': 2, 'botcommand_id': 1}, # user
+            {'role_id': 2, 'botcommand_id': 2}, # user
         ]
     )
     # ### end Alembic commands ###

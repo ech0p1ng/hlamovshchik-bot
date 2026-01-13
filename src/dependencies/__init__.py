@@ -8,6 +8,7 @@ from attachment.services.service import AttachmentService
 from message.services.service import MessageService
 from user.services.service import UserService
 from botcommand.services.service import BotCommandService
+from permission.services.service import PermissionService
 
 SessionLocal = async_sessionmaker(async_engine, expire_on_commit=False)
 
@@ -41,3 +42,11 @@ async def get_role_service(db: AsyncSession) -> RoleService:
 
 async def get_botcommand_service(db: AsyncSession) -> BotCommandService:
     return BotCommandService(db)
+
+
+async def get_permission_service(db: AsyncSession) -> PermissionService:
+    return PermissionService(
+        db,
+        await get_botcommand_service(db),
+        await get_role_service(db)
+    )
