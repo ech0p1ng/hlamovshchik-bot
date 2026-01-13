@@ -3,7 +3,7 @@ services:
     container_name: app
     build: 
       dockerfile: ./Dockerfile
-      target: server # server - для продакшена, dev - для разработки
+      target: dev # server - для продакшена, dev - для разработки
       args:
         - POETRY_VERSION=${POETRY_VERSION}
     volumes:

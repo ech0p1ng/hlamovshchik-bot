@@ -25,12 +25,14 @@ async def update_messages_base(message: types.Message):
         message_service = await get_message_service(db)
         async for msg in message_service.upload_all():
             if show_msg:
-                current = msg['current']
+                current = ', '.join([str(msg_id) for msg_id in msg['current']])
                 last = msg['last']
+                first = msg['first']
                 total = msg['total']
                 output = (f'Парсинг...\n\n'
-                          f'Текущее: ID {current}\n'
-                          f'Последнее: ID {last}\n'
+                          f'ID первого: {first}\n'
+                          f'ID последнего: {last}\n'
+                          f'ID текущих: {current}\n'
                           f'Кол-во сообщений за этот момент: {total}')
                 await message.answer(output)
 
@@ -61,13 +63,14 @@ async def find_message(message: types.Message):
         for i, url in enumerate(img_urls):
             if i == 10:
                 break
-            file = await download_file(url)
+            file_data = await download_file(url)
+            file: BytesIO = file_data['file']
             buffered_file = BufferedInputFile(
-                BytesIO(file['file']).getvalue(),
-                f'{file['name']}.{file['ext']}'
+                file.getvalue(),
+                f'{file_data['name']}.{file_data['ext']}'
             )
-            if file['ext'] in settings.attachment.image_extensions:
+            if file_data['ext'] in settings.attachment.image_extensions:
                 media.append(InputMediaPhoto(media=buffered_file))
-            elif file['ext'] in settings.attachment.video_extensions:
+            elif file_data['ext'] in settings.attachment.video_extensions:
                 media.append(InputMediaVideo(media=buffered_file))
-        message.answer_media_group(media, caption=msg.text)
+        await message.answer_media_group(media, caption=msg.text)

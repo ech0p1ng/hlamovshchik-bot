@@ -3,8 +3,9 @@ from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import model_validator
 from typing import Self
+from dotenv import load_dotenv
 
-dot_env_path = str(Path(__file__).parent.parent / '.env')
+ENV_PATH = str(Path(__file__).parent.parent / '.env')
 
 
 class MinioSettings(BaseSettings):
@@ -75,10 +76,17 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_nested_delimiter='__',
-        env_file=dot_env_path,
+        env_file=ENV_PATH,
         env_file_encoding='utf-8',
         extra='ignore')
 
 
+__settings: Settings | None = None
+
+
 def get_settings() -> Settings:
-    return Settings()  # type: ignore
+    global __settings
+    if __settings is None:
+        load_dotenv(dotenv_path=ENV_PATH, override=True)
+        __settings = Settings()  # type: ignore
+    return __settings

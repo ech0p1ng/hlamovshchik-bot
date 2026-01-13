@@ -167,10 +167,11 @@ class MessageService(BaseService[MessageModel]):
             Exception: Не удалось спарсить сообщения
 
         Yields:
-            dict[str,int]: Прогресс парсинга 
+            dict[str,Any]: Прогресс парсинга 
         ```
         {
-            "current": msg_id, [int]
+            "current": current_msgs_ids, [list[int]]
+            "first": first_msg_id [int]
             "last": last_msg_id [int]
             "messages": messages [list]
             "total": messages_count [int]
@@ -179,15 +180,17 @@ class MessageService(BaseService[MessageModel]):
         '''
         self.logger.info('Обновление займет продолжительное время...')
         last_msg_id = await self.__get_last_msg_id()
+        first_msg_id = 0
         msg_id = 0
-        count = 1
-
+        after = 1
         while msg_id < last_msg_id:
-            parsed = await self.__parse_messages(after=count)
+            parsed = await self.__parse_messages(after=after)
             models = []
-            # TODO: Исправить почему парсятся сообщения только до ID 1494
             if parsed is not None:
-                count += len(parsed)
+                current_messages_id = []
+                if after == 1:
+                    after = int(parsed[0]['id'])
+                    first_msg_id = after
                 for m in parsed:
                     files: list[tuple[str, str]] = [(m['id'], img) for img in m['image_urls']]
                     # attachments = await self.attachment_service.upload_files(*files) or []
@@ -200,13 +203,17 @@ class MessageService(BaseService[MessageModel]):
                         files_info=files
                     )
                     models.append(model)
-                    msg_id = m['id']
+                    current_messages_id.append(int(m['id']))
+
+                total = len(models)
+                after += total
 
                 yield {
-                    'current': int(msg_id),
+                    'current': current_messages_id,
+                    'first': int(first_msg_id),
                     'last': int(last_msg_id),
                     'messages': models,
-                    'total': len(models),
+                    'total': total,
                 }
             await asyncio.sleep(random.randint(2, 5))
         # return models
