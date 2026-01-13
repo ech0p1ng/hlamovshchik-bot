@@ -41,7 +41,7 @@ class RoleService(BaseService[RoleModel]):
         '''
         filter = {
             "id": model.id,
-            "role_name": model.name
+            "name": model.name
         }
         if not await self.exists(filter, raise_exc=False):
             return await super().create(model)

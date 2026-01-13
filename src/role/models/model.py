@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, relationship
 from base.model import BaseModel
 from role.schemas.schema import RoleSchema, RoleSimpleSchema
 from botcommand.models.model import BotCommandModel
+from permission.table import permissions_table
 
 if TYPE_CHECKING:
     from user.models.model import UserModel
@@ -14,7 +15,7 @@ class RoleModel(BaseModel):
 
     Args:
         id (int): Идентификатор
-        role_name (str): Название роли
+        name (str): Название роли
 
     '''
     __tablename__ = 'roles'
@@ -24,10 +25,10 @@ class RoleModel(BaseModel):
         lazy='selectin',
     )
 
-    endpoints: Mapped[list['BotCommandModel']] = relationship(
+    botcommands: Mapped[list['BotCommandModel']] = relationship(
         back_populates='roles',
         uselist=True,
-        secondary='permission',
+        secondary=permissions_table,
         lazy='selectin'
     )
 
@@ -36,9 +37,9 @@ class RoleModel(BaseModel):
         if type(schema) is RoleSchema:
             return cls(
                 id=schema.id,
-                role_name=schema.name
+                name=schema.name
             )
         else:
             return cls(
-                role_name=schema.name
+                name=schema.name
             )

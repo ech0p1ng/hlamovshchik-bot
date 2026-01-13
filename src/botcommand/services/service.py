@@ -2,7 +2,7 @@ from base.service import BaseService
 from botcommand.models.model import BotCommandModel
 from botcommand.repositories.repository import EndpointRepository
 from sqlalchemy.ext.asyncio import AsyncSession
-from botcommand.schemas.botcommand import BotCommandSimpleSchema
+from botcommand.schemas.schema import BotCommandSimpleSchema
 
 
 class BotCommandService(BaseService[BotCommandModel]):

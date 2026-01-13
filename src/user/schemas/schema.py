@@ -9,13 +9,12 @@ class UserSimpleSchema(BaseSimpleSchema):
 
     Args:
         id (int): Telegram id (не @username) пользователя
-        profile_name (str): Имя профиля
-        user_name (str): @username
+        user_name (str | None): @username
         role_id (int): Идентификатор роли
     '''
     id: int = Field(gt=0)
-    profile_name: str
-    user_name: str
+    # profile_name: str
+    user_name: str | None
     role_id: int = Field(gt=0)
 
 
@@ -25,11 +24,10 @@ class UserSchema(BaseSimpleSchema):
 
     Args:
         id (int): Telegram id (не @username) пользователя
-        profile_name (str): Имя профиля
-        user_name (str): @username
+        user_name (str | None): @username
         role (RoleSchema): Роль
     '''
     id: int = Field(gt=0)
-    profile_name: str
-    user_name: str
+    # profile_name: str
+    user_name: str | None
     role: RoleSchema

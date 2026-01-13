@@ -8,7 +8,8 @@ from permission.schemas.schema import (
 
 class PermissionModel(BaseModel):
     '''
-    Таблица для разрыва связи "многие ко многим" у таблиц botcommands и roles
+    Таблица для разрыва связи "многие ко многим" \
+    у таблиц botcommands и roles
     '''
     __tablename__ = 'permissions'
     role_id: Mapped[int] = mapped_column(ForeignKey('roles.id'))

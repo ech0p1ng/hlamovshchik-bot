@@ -32,7 +32,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
-    sa.Column('profile_name', sa.String(), nullable=False),
+    # sa.Column('profile_name', sa.String(), nullable=False),
     sa.Column('user_name', sa.String(), nullable=False),
     sa.Column('role_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),

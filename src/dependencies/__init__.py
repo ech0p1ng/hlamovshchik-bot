@@ -2,9 +2,12 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 from config import get_settings
 from db.database import async_engine, get_db
+from role.services.service import RoleService
 from storage.services.minio_service import MinioService
 from attachment.services.service import AttachmentService
 from message.services.service import MessageService
+from user.services.service import UserService
+from botcommand.services.service import BotCommandService
 
 SessionLocal = async_sessionmaker(async_engine, expire_on_commit=False)
 
@@ -26,3 +29,15 @@ async def get_attachment_service(db: AsyncSession) -> AttachmentService:
 async def get_message_service(db: AsyncSession) -> MessageService:
     attachment_service = await get_attachment_service(db)
     return MessageService(db, attachment_service)
+
+
+async def get_user_service(db: AsyncSession) -> UserService:
+    return UserService(db)
+
+
+async def get_role_service(db: AsyncSession) -> RoleService:
+    return RoleService(db)
+
+
+async def get_botcommand_service(db: AsyncSession) -> BotCommandService:
+    return BotCommandService(db)

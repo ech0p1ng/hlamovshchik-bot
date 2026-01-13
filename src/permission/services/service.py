@@ -88,7 +88,7 @@ class PermissionService(BaseService[PermissionModel]):
         '''
         await self.role_service.exists({
             "id": role_model.id,
-            "role_name": role_model.name
+            "name": role_model.name
         })
         await self.botcommand_service.exists({
             "id": botcommand_model.id,

@@ -5,16 +5,41 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import BufferedInputFile, InputMediaPhoto, InputMediaVideo, InputMediaDocument, InputMediaAudio
 
 from async_requests import download_file
-from dependencies import get_message_service, get_minio_service
+from dependencies import get_message_service, get_minio_service, get_user_service
 from db.database import get_db
 from config import get_settings
+from user.models.model import UserModel
+from user.schemas.schema import UserSimpleSchema
 
 router = Router()
 
 
 @router.message(CommandStart())
 async def send_welcome(message: types.Message) -> None:
-    await message.answer("Привет! Я асинхронный бот на aiogram 🚀")
+    if not message.from_user:
+        return
+
+    is_newbie = True
+    user: UserModel | None = None
+    id = message.from_user.id
+    username = message.from_user.username
+    filter = {'id': id}
+
+    async for db in get_db():
+        user_service = await get_user_service(db)
+        if await user_service.exists(filter, raise_exc=False):
+            user = await user_service.get(filter)
+            is_newbie = False
+        else:
+            user = await user_service.create(UserModel.from_schema(
+                UserSimpleSchema(id=id, user_name=username, role_id=2)
+            ))
+
+        if is_newbie:
+            msg = f"Привет, {user.user_name}! Я - Хламовщик, ищу картинки в Хламе по тексту в посте"
+        else:
+            msg = f'С возвращением, {user.user_name}!'
+        await message.answer(msg)
 
 
 @router.message(Command("parse"))
@@ -33,20 +58,21 @@ async def update_messages_base(message: types.Message):
                           f'ID первого: {first}\n'
                           f'ID последнего: {last}\n'
                           f'ID текущих: {current}\n'
-                          f'Кол-во сообщений за этот момент: {total}')
+                          f'Итого сообщений за этот момент: {total}')
                 await message.answer(output)
 
 
 @router.message(Command("find"))
 async def find_message(message: types.Message):
+    error_msg = "Пожалуйста, укажите текст для поиска."
     if not message.text:
-        await message.reply("Пожалуйста, укажите текст для поиска.")
+        await message.reply(error_msg)
         return
 
     query_text = message.text[len("/find "):].strip()
 
     if not query_text:
-        await message.reply("Пожалуйста, укажите текст для поиска.")
+        await message.reply(error_msg)
         return
 
     found = []
