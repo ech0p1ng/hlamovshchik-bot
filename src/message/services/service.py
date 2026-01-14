@@ -81,7 +81,7 @@ class MessageService(BaseService[MessageModel]):
         return model
 
     async def __parse_data(self, message: Tag) -> dict[str, Any]:
-        message_text = message.select('.tgme_widget_message_text.js-message_text')
+        message_text_arr = message.select('.tgme_widget_message_text.js-message_text')
         message_id = (
             str(
                 message
@@ -100,9 +100,10 @@ class MessageService(BaseService[MessageModel]):
                 if s.startswith('background-image:url('):
                     url = s.replace("background-image:url('", '')[:-2]
                     image_urls.append(url)
+        text = message_text_arr[0].getText() if message_text_arr else ''
         return {
             'id': int(message_id),
-            'text': message_text[0].getText(),
+            'text': text,
             'image_urls': image_urls,
         }
 
@@ -149,7 +150,9 @@ class MessageService(BaseService[MessageModel]):
             for i, m in enumerate(messages):
                 if i > self.__parsed_messages_at_once:
                     break
-                parsed_data.append(await self.__parse_data(m))
+                data = await self.__parse_data(m)
+                if data['text'] != '':
+                    parsed_data.append(data)
             return parsed_data
 
     async def __get_last_msg_id(self) -> int:
