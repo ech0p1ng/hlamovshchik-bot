@@ -109,7 +109,7 @@ class MessageService(BaseService[MessageModel]):
 
     async def __parse_messages(self, after: int | None = None, before: int | None = None) -> list[dict[str, Any]] | None:
         '''
-        Парсинг 15 сообщений
+        Парсинг сообщений
 
         Args:
             after (int, optional): ID поста, после которого будут спаршены сообщения. По-умолчанию: None.
@@ -161,7 +161,7 @@ class MessageService(BaseService[MessageModel]):
             raise Exception('Не удалось спарсить сообщения')
         return parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
 
-    async def upload_all(self) -> AsyncGenerator[dict[str, Any]]:
+    async def parse_all(self) -> AsyncGenerator[dict[str, Any]]:
         '''
         Парсинг всех сообщений из канала
 
@@ -173,9 +173,10 @@ class MessageService(BaseService[MessageModel]):
         ```
         {
             "current": current_msgs_ids, [list[int]]
-            "first": first_msg_id [int]
-            "last": last_msg_id [int]
-            "messages": messages [list]
+            "first": first_msg_id, [int]
+            "last": last_msg_id, [int]
+            "messages": messages, [list[MessageModel]]
+            "skipped": messages, [list[int]]
             "total": messages_count [int]
         }
         ```
@@ -188,25 +189,30 @@ class MessageService(BaseService[MessageModel]):
         while msg_id < last_msg_id:
             parsed = await self.__parse_messages(after=after)
             models = []
+            skipped_messages_id = []
             if parsed is not None:
                 current_messages_id = []
                 if after == 1:
                     after = int(parsed[0]['id'])
                     first_msg_id = after
                 for m in parsed:
-                    files: list[tuple[str, str]] = [(m['id'], img) for img in m['image_urls']]
-                    # attachments = await self.attachment_service.upload_files(*files) or []
-                    schema = MessageCreateSchema(
-                        tg_msg_id=m['id'],
-                        text=m['text'],
-                    )
-                    model = await self.create(
-                        model=MessageModel.from_schema(schema),
-                        files_info=files
-                    )
-                    models.append(model)
-                    current_messages_id.append(int(m['id']))
-
+                    id = int(m['id'])
+                    try:
+                        files: list[tuple[str, str]] = [(id, img) for img in m['image_urls']]
+                        # attachments = await self.attachment_service.upload_files(*files) or []
+                        schema = MessageCreateSchema(
+                            tg_msg_id=id,
+                            text=m['text'],
+                        )
+                        model = await self.create(
+                            model=MessageModel.from_schema(schema),
+                            files_info=files
+                        )
+                        models.append(model)
+                        current_messages_id.append(id)
+                    except Exception:
+                        skipped_messages_id.append(id)
+                        
                 total = len(models)
                 after += total
 
@@ -215,6 +221,7 @@ class MessageService(BaseService[MessageModel]):
                     'first': int(first_msg_id),
                     'last': int(last_msg_id),
                     'messages': models,
+                    'skipped': skipped_messages_id,
                     'total': total,
                 }
             await asyncio.sleep(random.randint(2, 5))

@@ -12,8 +12,7 @@ from config import get_settings
 from user.models.model import UserModel
 from user.schemas.schema import UserSimpleSchema
 from role.models.model import RoleModel
-
-
+import logging
 router = Router()
 
 FORBIDDEN_MSG = f'Доступ запрещен'
@@ -69,7 +68,11 @@ async def check_permission(command: str, message: types.Message) -> tuple[bool, 
     if not message.from_user:
         error_msg = f'{FORBIDDEN_MSG}\n\nЯ не отвечаю не пересланные от каналов или ботов сообщения'
         return (False, error_msg)
-    user = await get_user(message.from_user.id, message.from_user.username)
+    id = message.from_user.id
+    username = message.from_user.username
+    text = message.text or ''
+    logging.info(f'Сообщение от {username}[ID={id}]: "{text}"')
+    user = await get_user(id, username)
     permitted = await _check_permission(command, user)
     return (permitted, '' if permitted else FORBIDDEN_MSG)
     # ######################## #
@@ -99,20 +102,26 @@ async def update_messages_base(message: types.Message) -> None:
 
     await message.answer('Запуск парсинга...')
     show_msg = True
+    skipped = []
     async for db in get_db():
         message_service = await get_message_service(db)
-        async for msg in message_service.upload_all():
+        async for msg in message_service.parse_all():
             if show_msg:
-                current = ', '.join([str(msg_id) for msg_id in msg['current']])
+                current = msg['current']
+                skipped += msg['skipped']
+                current_str = ', '.join([str(msg_id) for msg_id in current])
+                skipped_str = ', '.join([str(msg_id) for msg_id in skipped])
                 last = msg['last']
                 first = msg['first']
                 total = msg['total']
                 output = (f'Парсинг...\n\n'
                           f'ID первого: {first}\n'
                           f'ID последнего: {last}\n'
-                          f'ID текущих: {current}\n'
+                          f'ID текущих: {current_str}\n' +
+                          (f'ID пропущенных: {skipped_str}\n' if skipped else '') +
                           f'Итого сообщений за этот момент: {total}')
                 await message.answer(output)
+                await db.commit()
 
 
 @router.message(Command("find"))
