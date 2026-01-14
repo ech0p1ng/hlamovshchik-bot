@@ -59,8 +59,8 @@ def upgrade() -> None:
             sa.column('role_id', sa.Integer),
         ),
         [
-            {'id': 788177685, 'user_name': '@oselish', 'role_id': 1},
-            {'id': 6508357756, 'user_name': '@alexey2003petrov', 'role_id': 1},
+            {'id': 788177685, 'user_name': 'oselish', 'role_id': 1},
+            # {'id': 6508357756, 'user_name': 'alexey2003petrov', 'role_id': 1},
         ]
     )
     

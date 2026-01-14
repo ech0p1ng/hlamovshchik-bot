@@ -11,6 +11,7 @@ from db.database import get_db
 from config import get_settings
 from user.models.model import UserModel
 from user.schemas.schema import UserSimpleSchema
+from role.models.model import RoleModel
 
 
 router = Router()
@@ -29,14 +30,17 @@ async def get_user(id: int, username: str | None) -> UserModel:
         UserModel: SQLAlchemy модель пользователя
     '''
     filter = {'id': id}
+    user: UserModel | None = None
     async for db in get_db():
         user_service = await get_user_service(db)
-        if await user_service.exists(filter, raise_exc=False):
-            return await user_service.get(filter)
-        return await user_service.create(UserModel.from_schema(
-            UserSimpleSchema(id=id, user_name=username, role_id=2)
-        ))
-    raise RuntimeError("get_db() did not yield a session")
+        if not await user_service.exists(filter, raise_exc=False):
+            await user_service.create(UserModel.from_schema(
+                UserSimpleSchema(id=id, user_name=username, role_id=2)
+            ))
+        user = await user_service.get(filter, [UserModel.role])
+    if not user:
+        raise RuntimeError("Пользователь не был создан")
+    return user
 
 
 async def _check_permission(command: str, user: UserModel) -> bool:
