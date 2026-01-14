@@ -61,8 +61,8 @@ class MessageService(BaseService[MessageModel]):
         Raises:
             WasNotCreatedError: Не удалось создать сообщение
         '''
-        if not files_info:
-            return await super().create(model)
+        # if not files_info:
+        #     return await super().create(model)
 
         # model.attachments = []
         filter = {'tg_msg_id': model.tg_msg_id}
@@ -73,11 +73,10 @@ class MessageService(BaseService[MessageModel]):
             model = await super().update(existing, filter)
         else:
             model = await super().create(model)
-
-        attachments = await self.attachment_service.upload_files(*files_info)
-        model.attachments = attachments or []
-        await self.db.commit()
-        await self.db.refresh(model)
+        if files_info:
+            attachments = await self.attachment_service.upload_files(*files_info)
+            model.attachments = attachments or []
+            await super().update(model, filter)
 
         return model
 
