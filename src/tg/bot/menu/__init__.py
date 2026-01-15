@@ -111,7 +111,7 @@ async def update_messages_base(message: types.Message) -> None:
             async for msg in message_service.parse_all():
                 if show_msg:
                     current = msg['current']
-                    skipped += msg['skipped']
+                    skipped.update(msg['skipped'])
                     current_str = ', '.join([str(msg_id) for msg_id in current])
                     skipped_str = ', '.join([str(msg_id) for msg_id in skipped])
                     last = msg['last']
