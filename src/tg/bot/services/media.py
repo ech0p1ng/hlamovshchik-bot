@@ -103,25 +103,25 @@ class MediaService:
                 })
             yield result
 
-    async def inline_media(self, text: str) -> list[InlineQueryResultPhoto]:
+    async def inline_media(self, text: str) -> AsyncGenerator[list[InlineQueryResultPhoto]]:
         '''
         Медиа при вводе @bot_name в поле ввода сообщения
 
         Args:
             text (str): Текст для поиска
 
-        Returns:
+        Yields:
             list[InlineQueryResultPhoto]: Найденные изображения
 
         Raises:
             NotFoundError: Ничего не найдено
         '''
-        results = []
         count = 1
         async for data in self.find_media(text, 'global'):
+            media = []
             for img_data in data:
                 if img_data['type'] == 'img':
-                    results.append(InlineQueryResultPhoto(
+                    media.append(InlineQueryResultPhoto(
                         id=str(count),
                         photo_url=img_data['url'],  # type: ignore
                         thumbnail_url=img_data['url'],  # type: ignore  # можно уменьшить, но для начала сойдёт
@@ -129,7 +129,7 @@ class MediaService:
                         description="Отправлено с канала Хлам"
                     ))
                     count += 1
-        return results
+            yield media
 
     async def inchat_media(self, text: str) -> AsyncGenerator[list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo], None]:
         '''
