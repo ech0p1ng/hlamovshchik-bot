@@ -160,8 +160,8 @@ class MediaService:
 
                 kwargs = {}
                 if i == 0:
-                    file_name: str = img_data['name']  # type: ignore
-                    file_ext: str = img_data['ext']  # type: ignore
+                    file_name = file_data['name']
+                    file_ext = file_data['ext']
                     url_global = self.minio_service.get_global_file_url(file_name, file_ext)
                     kwargs['caption'] = url_global
 
