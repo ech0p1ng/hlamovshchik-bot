@@ -2,21 +2,21 @@ from aiogram import types, F, Router
 from aiogram.filters import Command, CommandStart
 from dependencies import (
     get_user_service,
-    get_permission_service,
     get_media_service,
 )
 from db.database import get_db
 from user.models.model import UserModel
+from exceptions.exception import NotFoundError
 
 router = Router()
 
 
-async def check_permission(message: types.Message) -> tuple[bool, UserModel | None]:
+async def check_permission(message: types.Message | types.InlineQuery) -> tuple[bool, UserModel | None]:
     '''
     Проверка доступа пользователя, отправившего сообщение
 
     Args:
-        message (types.Message): Сообщение, отправленное пользователем
+        message (types.Message | types.InlineQuery): Сообщение, отправленное пользователем
 
     Returns:
         tuple[bool,UserModel|None]: `(permission, user)`. \
@@ -42,7 +42,7 @@ async def check_permission(message: types.Message) -> tuple[bool, UserModel | No
             message.from_user.id,
             message.from_user.username,
         )
-        if not permitted:
+        if not permitted and type(message) is types.Message:
             await message.answer(answer)
 
     return permitted, user
@@ -89,7 +89,7 @@ async def find(message: types.Message) -> None:
             await message.reply(error_msg)
             return
 
-        query_text = message.text[len("/find "):].strip()
+        query_text = message.text[len("/find "):].strip().lower()
 
         if not query_text:
             await message.reply(error_msg)
@@ -97,5 +97,27 @@ async def find(message: types.Message) -> None:
 
         media_service = await get_media_service(db)
 
-        async for media in media_service.inchat_media(query_text):
-            await message.answer_media_group(media)
+        try:
+            async for media in media_service.inchat_media(query_text):
+                await message.answer_media_group(media)
+        except NotFoundError as e:
+            await message.answer(str(e))
+
+
+@router.inline_query
+async def inline_msg(inline_query: types.InlineQuery) -> None:
+    # ### ПРОВЕРКА ДОСТУПА ### #
+    permitted, user = await check_permission(inline_query)
+    if not permitted or not user:
+        return
+    # ######################## #
+    query_text = inline_query.query.strip().lower()
+    all_media = []
+    try:
+        async for db in get_db():
+            media_service = await get_media_service(db)
+            async for media in media_service.inline_media(query_text):
+                all_media.append(media)
+        await inline_query.answer(all_media)
+    except Exception:
+        pass

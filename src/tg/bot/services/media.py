@@ -16,6 +16,7 @@ from async_requests import download_file
 from config import get_settings
 from message.services.service import MessageService
 from storage.services.minio_service import MinioService
+from exceptions.exception import NotFoundError
 
 
 class MediaService:
@@ -76,9 +77,10 @@ class MediaService:
         }
         ```
         '''
-        found = []
-
         found = await self.message_service.find_with_value({'text': text})
+
+        if not found:
+            raise NotFoundError('Ничего не найдено')
 
         settings = get_settings()
         for msg in found:
@@ -110,6 +112,9 @@ class MediaService:
 
         Returns:
             list[InlineQueryResultPhoto]: Найденные изображения
+
+        Raises:
+            NotFoundError: Ничего не найдено
         '''
         results = []
         count = 1
@@ -124,7 +129,6 @@ class MediaService:
                         description="Отправлено с канала Хлам"
                     ))
                     count += 1
-
         return results
 
     async def inchat_media(self, text: str) -> AsyncGenerator[list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo], None]:
@@ -136,6 +140,9 @@ class MediaService:
 
         Yields:
             Iterator[AsyncGenerator[list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo]]]: Список найденных медиа
+
+        Raises:
+            NotFoundError: Ничего не найдено
         '''
         async for data in self.find_media(text, 'local'):
             media: list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo] = []
