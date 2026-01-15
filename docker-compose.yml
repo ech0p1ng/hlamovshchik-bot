@@ -89,9 +89,5 @@ services:
       - .env
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-
-
-volumes:
-  certbot_www:
-  certbot_certs:
+      - ./data/caddy:/data
+    restart: unless-stopped

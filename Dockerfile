@@ -14,8 +14,6 @@ RUN mkdir -p /root/.cache/pypoetry/virtualenvs && \
 RUN pip install --upgrade pip
 RUN pip install poetry==${POETRY_VERSION}
 RUN poetry env use /usr/local/bin/python
-RUN chmod +x /app/scripts/init-letsencrypt.sh
-RUN chmod +x /app/scripts/renew-certs.sh
 
 FROM base AS server
 

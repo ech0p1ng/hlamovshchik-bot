@@ -1,4 +1,4 @@
-{$APP__DOMAIN} {
+{$MINIO__DOMAIN} {
     reverse_proxy {$MINIO__ENDPOINT}
 
     header {
