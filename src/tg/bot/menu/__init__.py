@@ -104,7 +104,7 @@ async def find(message: types.Message) -> None:
             await message.answer(str(e))
 
 
-@router.inline_query
+@router.inline_query()
 async def inline_msg(inline_query: types.InlineQuery) -> None:
     # ### ПРОВЕРКА ДОСТУПА ### #
     permitted, user = await check_permission(inline_query)
@@ -112,12 +112,10 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
         return
     # ######################## #
     query_text = inline_query.query.strip().lower()
-    all_media = []
     try:
         async for db in get_db():
             media_service = await get_media_service(db)
-            async for media in media_service.inline_media(query_text):
-                all_media.append(media)
-        await inline_query.answer(all_media)
+            media = await media_service.inline_media(query_text)
+            await inline_query.answer(media)  # type: ignore
     except Exception:
         pass
