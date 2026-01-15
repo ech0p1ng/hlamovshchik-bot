@@ -150,13 +150,21 @@ class MediaService:
         '''
         async for data in self.find_media(text, 'local'):
             media: list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo] = []
-            for img_data in data:
+            for i, img_data in enumerate(data):
                 file_data = await download_file(img_data['url'])  # type: ignore
                 file: BytesIO = file_data['file']
                 buffered_file = BufferedInputFile(
                     file.getvalue(),
                     f'{file_data['name']}.{file_data['ext']}'
                 )
+
+                kwargs = {}
+                if i == 0:
+                    file_name: str = img_data['name']  # type: ignore
+                    file_ext: str = img_data['ext']  # type: ignore
+                    url_global = self.minio_service.get_global_file_url(file_name, file_ext)
+                    kwargs['caption'] = url_global
+
                 if img_data['type'] == 'img':
                     media.append(InputMediaPhoto(media=buffered_file))
                 elif img_data['type'] == 'vid':
