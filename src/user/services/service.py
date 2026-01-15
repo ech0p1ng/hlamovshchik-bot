@@ -125,12 +125,8 @@ class UserService(BaseService[UserModel]):
         Returns:
             tuple[bool, str]: Разрешить/запретить доступ; ответ бота
         '''
-        # ### ПРОВЕРКА ДОСТУПА ### #
-        # text = message.text or ''
-        # logging.info(f'Сообщение от {username}[ID={id}]: "{text}"')
         user = await self.get_by_id_and_name(id, username)
         permitted = await self.permission_service.check_permission(
             command, user, raise_exc=False
         )
-        # permitted = await self._check_permission(command, user)
         return (permitted, '' if permitted else FORBIDDEN_MSG)

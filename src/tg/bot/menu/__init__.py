@@ -37,8 +37,11 @@ async def check_permission(message: types.Message) -> tuple[bool, UserModel | No
             message.from_user.id,
             message.from_user.username,
         )
-        permission_service = await get_permission_service(db)
-        permitted, answer = await permission_service.check_permission('find', user)
+        permitted, answer = await user_service.check_permission(
+            'find',
+            message.from_user.id,
+            message.from_user.username,
+        )
         if not permitted:
             await message.answer(answer)
 

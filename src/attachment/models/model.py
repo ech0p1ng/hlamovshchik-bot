@@ -61,7 +61,7 @@ class AttachmentModel(BaseModel):
     def from_schema(
         cls,
         schema: AttachmentSimpleSchema | AttachmentSchema | AttachmentMinioSchema,
-        tg_msg_id: str | None = None,
+        tg_msg_id: int | None = None,
         tg_file_url: str | None = None
     ) -> 'AttachmentModel':
         '''

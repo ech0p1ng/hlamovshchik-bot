@@ -33,13 +33,13 @@ class AttachmentService(BaseService[AttachmentModel]):
 
     async def upload_files(
         self,
-        *tg_msg_data: tuple[str, str]
+        *tg_msg_data: tuple[int, str]
     ) -> list[AttachmentModel] | None:
         '''
         Загрузка медиафайлов в MinIO и MinIO-ссылок на них в БД
 
         Args:
-            tg_msg_data (tuple[str, str]): ID сообщения и URL медиа-контента
+            tg_msg_data (tuple[int, str]): ID сообщения и URL медиа-контента
 
         Returns:
             list[AttachmentModel]|None: SQL-Alchemy созданного медиа-контента

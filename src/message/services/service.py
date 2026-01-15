@@ -46,14 +46,14 @@ class MessageService(BaseService[MessageModel]):
     async def create(
         self,
         model: MessageModel,
-        files_info: list[tuple[str, str]] | None = None
+        files_info: list[tuple[int, str]] | None = None
     ) -> MessageModel:
         '''
         Создать сообщение
 
         Args:
             model (MessageModel): SQL Alchemy модель сообщения
-            files_info (list[tuple[str,str]]): Список `ID сообщения` и `URL медиа-контента`
+            files_info (list[tuple[int,str]]): Список `ID сообщения` и `URL медиа-контента`
 
         Returns:
             MessageModel: SQLAlchemy-модель сообщения
@@ -61,9 +61,6 @@ class MessageService(BaseService[MessageModel]):
         Raises:
             WasNotCreatedError: Не удалось создать сообщение
         '''
-        # if not files_info:
-        #     return await super().create(model)
-
         # model.attachments = []
         filter = {'tg_msg_id': model.tg_msg_id}
         if await self.exists(filter, raise_exc=False):
@@ -198,7 +195,7 @@ class MessageService(BaseService[MessageModel]):
                 for m in parsed:
                     id = int(m['id'])
                     try:
-                        files: list[tuple[str, str]] = [(id, img) for img in m['image_urls']]
+                        files: list[tuple[int, str]] = [(id, img_url) for img_url in m['image_urls']]
                         # attachments = await self.attachment_service.upload_files(*files) or []
                         schema = MessageCreateSchema(
                             tg_msg_id=id,
@@ -212,7 +209,7 @@ class MessageService(BaseService[MessageModel]):
                         current_messages_id.append(id)
                     except Exception:
                         skipped_messages_id.append(id)
-                        
+
                 total = len(models)
                 after += total
 

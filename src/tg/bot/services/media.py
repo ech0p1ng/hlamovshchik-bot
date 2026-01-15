@@ -24,7 +24,7 @@ class MediaService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def update_messages_base(self) -> AsyncGenerator[str]:
+    async def update_messages_base(self) -> AsyncGenerator[str, None]:
         '''
         Парсинг всех сообщений в канале
 
@@ -54,11 +54,11 @@ class MediaService:
                     await self.db.commit()
                     yield output
         except minio.error.S3Error as e:
-            msg = e.message or str(e)
-            logging.error(msg)
-            yield msg
+            message = e.message or str(e)
+            logging.error(message)
+            yield message
 
-    async def find_media(self, text: str, url_type: Literal['global', 'local']) -> AsyncGenerator[list[dict[str, str | None]]]:
+    async def find_media(self, text: str, url_type: Literal['global', 'local']) -> AsyncGenerator[list[dict[str, str | None]], None]:
         '''
         Поиск медиа по тексту в канале
 
@@ -129,7 +129,7 @@ class MediaService:
 
         return results
 
-    async def inchat_media(self, text: str) -> AsyncGenerator[list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo]]:
+    async def inchat_media(self, text: str) -> AsyncGenerator[list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo], None]:
         '''
         Медиа в чате с ботом
 
