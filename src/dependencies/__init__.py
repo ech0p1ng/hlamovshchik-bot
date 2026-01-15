@@ -55,4 +55,6 @@ async def get_user_service(db: AsyncSession) -> UserService:
 
 
 async def get_media_service(db: AsyncSession) -> MediaService:
-    return MediaService(db)
+    message_service = await get_message_service(db)
+    minio_service = get_minio_service()
+    return MediaService(db, message_service, minio_service)

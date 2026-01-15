@@ -13,16 +13,16 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from async_requests import download_file
-from dependencies import (
-    get_message_service,
-    get_minio_service,
-)
 from config import get_settings
+from message.services.service import MessageService
+from storage.services.minio_service import MinioService
 
 
 class MediaService:
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: AsyncSession, message_service: MessageService, minio_service: MinioService) -> None:
         self.db = db
+        self.message_service = message_service
+        self.minio_service = minio_service
 
     async def update_messages_base(self) -> AsyncGenerator[str, None]:
         '''
@@ -34,9 +34,9 @@ class MediaService:
         yield 'Запуск парсинга...'
         show_msg = True
         skipped = set()
-        message_service = await get_message_service(self.db)
+
         try:
-            async for msg in message_service.parse_all():
+            async for msg in self.message_service.parse_all():
                 if show_msg:
                     current = msg['current']
                     skipped.update(msg['skipped'])
@@ -77,14 +77,12 @@ class MediaService:
         ```
         '''
         found = []
-        message_service = await get_message_service(self.db)
-        minio_service = get_minio_service()
 
-        found = await message_service.find_with_value({'text': text})
+        found = await self.message_service.find_with_value({'text': text})
 
         settings = get_settings()
         for msg in found:
-            get_url_func = minio_service.get_local_file_url if url_type == 'local' else minio_service.get_global_file_url
+            get_url_func = self.minio_service.get_local_file_url if url_type == 'local' else self.minio_service.get_global_file_url
             img_data = [{'url': get_url_func(a.file_name, a.file_extension), 'name': a.file_name, 'ext': a.file_extension}
                         for a in msg.attachments]
             result: list[dict[str, str | None]] = []
