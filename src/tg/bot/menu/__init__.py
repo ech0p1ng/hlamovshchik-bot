@@ -99,7 +99,10 @@ async def find(message: types.Message) -> None:
 
         try:
             async for media in media_service.inchat_media(query_text):
-                await message.answer_media_group(media)
+                try:
+                    await message.answer_media_group(media)
+                except Exception as e:
+                    pass
         except NotFoundError as e:
             await message.answer(str(e))
 
@@ -116,6 +119,9 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
         async for db in get_db():
             media_service = await get_media_service(db)
             async for media in media_service.inline_media(query_text):
-                await inline_query.answer(media)  # type: ignore
+                try:
+                    await inline_query.answer(media)  # type: ignore
+                except Exception as e:
+                    pass
     except Exception:
         pass

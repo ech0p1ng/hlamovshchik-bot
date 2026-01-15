@@ -214,9 +214,9 @@ class MessageService(BaseService[MessageModel]):
                     except Exception:
                         skipped_messages_id.update([id])
 
-                # await self.__set_last_parsed_msg_id(int(current_messages_id[-1]))
-                total = len(models)
                 first_msg_id = int(current_messages_id[-1]) + 1
+                await self.__set_last_parsed_msg_id(first_msg_id)
+                total = len(models)
 
                 yield {
                     'current': current_messages_id,
@@ -253,7 +253,7 @@ class MessageService(BaseService[MessageModel]):
         first_msg_id = 0
         async for msg in self.parse(first_msg_id, last_msg_id):
             yield msg
-            
+
     async def parse_new(self) -> AsyncGenerator[dict[str, Any]]:
         '''
         Парсинг новых сообщений из канала
