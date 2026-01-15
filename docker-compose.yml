@@ -14,9 +14,6 @@ services:
       - ./pyproject.toml:/app/pyproject.toml
       - ./Dockerfile:/app/Dockerfile
     ports:
-      # - "8080:8080"
-      - "80:80"
-      - "443:443"
       - "5678:5678"
   
     depends_on:
@@ -69,9 +66,9 @@ services:
     image: minio/minio:latest
     entrypoint: /bin/sh
     command: -c "mkdir -p /data/private-bucket && minio server /data --console-address ':9001'"
-    ports:
-      - "${MINIO__PORT}:${MINIO__PORT}"
-      - "${MINIO__PORT_SECURE}:${MINIO__PORT_SECURE}"
+    expose:
+      - "${MINIO__PORT}"
+      - "${MINIO__PORT_SECURE}"
     env_file:
       - .env
     volumes:
@@ -83,49 +80,18 @@ services:
       MINIO_SECRET_KEY: ${MINIO__SECRET_KEY}
 
   # сервисы для получения и обновления сертификатов
-  nginx:
-    image: nginx:alpine
+  caddy:
+    image: caddy
     ports:
       - "80:80"
       - "443:443"
+    env_file:
+      - .env
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./certs:/etc/letsencrypt
-      - ./certs/www:/var/www/certbot
-    depends_on:
-      - minio
-    restart: unless-stopped
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
 
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./certs:/etc/letsencrypt
-      - ./certs/www:/var/www/certbot
-    entrypoint: >
-      sh -c "
-        certbot certonly --webroot
-        -w /var/www/certbot
-        --email ${APP__EMAIL}
-        -d ${APP__DOMAIN}
-        --agree-tos
-        --non-interactive
-        || echo 'Сертификат уже существует или ошибка'
-      "
 
-  certbot-renew:
-    image: alpine:latest
-    volumes:
-      - ./certs:/etc/letsencrypt
-      - ./certs/www:/var/www/certbot
-      - ./scripts:/scripts:ro
-      - /var/run/docker.sock:/var/run/docker.sock  # ← не нужен, если используем HUP
-    working_dir: /scripts
-    command: >
-      sh -c "
-        apk add --no-cache dcron tzdata &&
-        cp /scripts/crontab /etc/crontabs/root &&
-        crond -f -l 2
-      "
-    depends_on:
-      - nginx
-    restart: unless-stopped
+volumes:
+  certbot_www:
+  certbot_certs:

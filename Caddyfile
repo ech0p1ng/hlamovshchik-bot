@@ -1,0 +1,7 @@
+{$APP__DOMAIN} {
+    reverse_proxy {$MINIO__ENDPOINT}
+
+    header {
+        Strict-Transport-Security "max-age=31536000"
+    }
+}

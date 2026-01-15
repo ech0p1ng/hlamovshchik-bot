@@ -210,4 +210,4 @@ class MinioService:
         Returns:
             str: URL файла в MinIO
         '''
-        return f'https://{self.__settings.app.domain}:{self.__settings.minio.port}/{self.__settings.minio.bucket_name}/{file_name}.{file_ext}'
+        return f'https://{self.__settings.minio.domain}:{self.__settings.minio.port}/{self.__settings.minio.bucket_name}/{file_name}.{file_ext}'

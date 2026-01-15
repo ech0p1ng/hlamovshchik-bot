@@ -17,12 +17,8 @@ class MinioSettings(BaseSettings):
     port: int
     port_secure: int
     endpoint: str
-
-
-class AppSettings(BaseSettings):
     ip: str
     domain: str
-    email: str
 
 
 class PostgresSettings(BaseSettings):
@@ -78,9 +74,6 @@ class Settings(BaseSettings):
 
     # Attachments
     attachment: AttachmentSettings
-
-    # App
-    app: AppSettings
 
     model_config = SettingsConfigDict(
         env_nested_delimiter='__',
