@@ -18,6 +18,7 @@ from message.repositories.repository import MessageRepository
 from attachment.services.service import AttachmentService
 from attachment.models.model import AttachmentModel
 from exceptions.exception import NotFoundError
+from global_var.services.service import GlobalVarService
 
 
 class MessageService(BaseService[MessageModel]):
@@ -25,7 +26,7 @@ class MessageService(BaseService[MessageModel]):
     Бизнес-логика сообщений
     '''
 
-    def __init__(self, db: AsyncSession, attachment_service: AttachmentService):
+    def __init__(self, db: AsyncSession, attachment_service: AttachmentService, global_var_service: GlobalVarService):
         '''
         Бизнес-логика сообщений
 
@@ -40,6 +41,7 @@ class MessageService(BaseService[MessageModel]):
         )
         self.db = db
         self.attachment_service = attachment_service
+        self.global_var_service = global_var_service
         self.logger = logging.getLogger('tg_logger')
         self.__settings = get_settings()
         self.__parsed_messages_at_once = 15
@@ -159,6 +161,73 @@ class MessageService(BaseService[MessageModel]):
             raise Exception('Не удалось спарсить сообщения')
         return parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
 
+    async def __get_last_parsed_msg_id(self) -> int:
+        value = await self.global_var_service.get_value('last_parsed_msg_id') or 0
+        return int(value)
+
+    async def __set_last_parsed_msg_id(self, value: int) -> None:
+        await self.global_var_service.set_value('last_parsed_msg_id', str(value))
+
+    async def parse(self, first_msg_id: int, last_msg_id: int) -> AsyncGenerator[dict[str, Any]]:
+        '''
+        Парсинг сообщений из канала
+
+        Raises:
+            Exception: Не удалось спарсить сообщения
+
+        Yields:
+            dict[str,Any]: Прогресс парсинга 
+        ```
+        {
+            "current": current_msgs_ids, [list[int]]
+            "first": first_msg_id, [int]
+            "last": last_msg_id, [int]
+            "messages": messages, [list[MessageModel]]
+            "skipped": messages, [list[int]]
+            "total": messages_count [int]
+        }
+        ```
+        '''
+        self.logger.info('Обновление займет продолжительное время...')
+        while first_msg_id < last_msg_id:
+            parsed = await self.__parse_messages(after=first_msg_id)
+            models = []
+            skipped_messages_id: set[int] = set()
+
+            if parsed:
+                current_messages_id = []
+                for m in parsed:
+                    id = int(m['id'])
+
+                    try:
+                        files: list[tuple[int, str]] = [(id, img_url) for img_url in m['image_urls']]
+                        schema = MessageCreateSchema(
+                            tg_msg_id=id,
+                            text=m['text'],
+                        )
+                        model = await self.create(
+                            model=MessageModel.from_schema(schema),
+                            files_info=files
+                        )
+                        models.append(model)
+                        current_messages_id.append(id)
+                    except Exception:
+                        skipped_messages_id.update([id])
+
+                # await self.__set_last_parsed_msg_id(int(current_messages_id[-1]))
+                total = len(models)
+                first_msg_id = int(current_messages_id[-1]) + 1
+
+                yield {
+                    'current': current_messages_id,
+                    'first': int(first_msg_id),
+                    'last': int(last_msg_id),
+                    'messages': models,
+                    'skipped': skipped_messages_id,
+                    'total': total,
+                }
+            await asyncio.sleep(random.randint(2, 5))
+
     async def parse_all(self) -> AsyncGenerator[dict[str, Any]]:
         '''
         Парсинг всех сообщений из канала
@@ -182,48 +251,34 @@ class MessageService(BaseService[MessageModel]):
         self.logger.info('Обновление займет продолжительное время...')
         last_msg_id = await self.__get_last_msg_id()
         first_msg_id = 0
-        msg_id = 0
-        after = 1
-        while msg_id < last_msg_id:
-            parsed = await self.__parse_messages(after=after)
-            models = []
-            skipped_messages_id = []
-            if parsed is not None:
-                current_messages_id = []
-                if after == 1:
-                    after = int(parsed[0]['id'])
-                    first_msg_id = after
-                for m in parsed:
-                    id = int(m['id'])
-                    try:
-                        files: list[tuple[int, str]] = [(id, img_url) for img_url in m['image_urls']]
-                        # attachments = await self.attachment_service.upload_files(*files) or []
-                        schema = MessageCreateSchema(
-                            tg_msg_id=id,
-                            text=m['text'],
-                        )
-                        model = await self.create(
-                            model=MessageModel.from_schema(schema),
-                            files_info=files
-                        )
-                        models.append(model)
-                        current_messages_id.append(id)
-                    except Exception:
-                        skipped_messages_id.append(id)
+        async for msg in self.parse(first_msg_id, last_msg_id):
+            yield msg
+            
+    async def parse_new(self) -> AsyncGenerator[dict[str, Any]]:
+        '''
+        Парсинг новых сообщений из канала
 
-                total = len(models)
-                after += total
+        Raises:
+            Exception: Не удалось спарсить сообщения
 
-                yield {
-                    'current': current_messages_id,
-                    'first': int(first_msg_id),
-                    'last': int(last_msg_id),
-                    'messages': models,
-                    'skipped': skipped_messages_id,
-                    'total': total,
-                }
-            await asyncio.sleep(random.randint(2, 5))
-        # return models
+        Yields:
+            dict[str,Any]: Прогресс парсинга 
+        ```
+        {
+            "current": current_msgs_ids, [list[int]]
+            "first": first_msg_id, [int]
+            "last": last_msg_id, [int]
+            "messages": messages, [list[MessageModel]]
+            "skipped": messages, [list[int]]
+            "total": messages_count [int]
+        }
+        ```
+        '''
+        self.logger.info('Обновление займет продолжительное время...')
+        last_msg_id = await self.__get_last_msg_id()
+        first_msg_id = await self.__get_last_parsed_msg_id()
+        async for msg in self.parse(first_msg_id, last_msg_id):
+            yield msg
 
     async def find_with_value(
         self,

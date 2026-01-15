@@ -138,6 +138,7 @@ class MediaService:
                     photo_url = img_data['url']
                     if photo_url:
                         title = (img_data['text'] or '')[:64]
+                        # TODO: Проверить URL
                         media.append(InlineQueryResultPhoto(
                             id=str(uuid.uuid4()),
                             photo_url=photo_url,
@@ -170,15 +171,15 @@ class MediaService:
                     f'{file_data['name']}.{file_data['ext']}'
                 )
 
-                kwargs = {}
+                caption = None
                 if i == 0:
                     file_name = file_data['name']
                     file_ext = file_data['ext']
                     url_global = self.minio_service.get_global_file_url(file_name, file_ext)
-                    kwargs['caption'] = url_global
+                    caption = url_global
 
                 if img_data['type'] == 'img':
-                    media.append(InputMediaPhoto(media=buffered_file, **kwargs))
+                    media.append(InputMediaPhoto(media=buffered_file, caption=caption))
                 elif img_data['type'] == 'vid':
-                    media.append(InputMediaVideo(media=buffered_file, **kwargs))
+                    media.append(InputMediaVideo(media=buffered_file, caption=caption))
             yield media
