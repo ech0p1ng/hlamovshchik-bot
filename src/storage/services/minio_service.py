@@ -148,6 +148,36 @@ class MinioService:
         except S3Error as exc:
             raise WasNotCreatedError(exc)
 
+    async def delete_file(self, file_name: str, file_ext: str) -> bool:
+        '''
+        Удаляет файл из MinIO по имени и расширению
+
+        Args:
+            file_name (str): Имя файла (без расширения)
+            file_ext (str): Расширение файла
+
+        Returns:
+            bool: True, если файл успешно удалён или не существовал;
+                False при ошибках (опционально — можно бросать исключение)
+
+        Raises:
+            S3Error: Если произошла ошибка MinIO, кроме "файл не найден"
+        '''
+        full_file_name = f"{file_name}.{file_ext.lower()}"
+
+        try:
+            await asyncio.to_thread(
+                self.client.remove_object,
+                self.bucket_name,
+                full_file_name
+            )
+            return True
+        except S3Error as exc:
+            if exc.code == "NoSuchKey":
+                return True
+            else:
+                raise WasNotCreatedError(f"Не удалось удалить файл: {exc}")
+
     @property
     def client(self) -> Minio:
         return self._client
