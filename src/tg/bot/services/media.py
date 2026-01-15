@@ -11,6 +11,7 @@ from typing import Any, AsyncGenerator, Literal
 import minio
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
 
 from async_requests import download_file
 from config import get_settings
@@ -88,9 +89,19 @@ class MediaService:
 
         settings = get_settings()
         for msg in found:
-            get_url_func = self.minio_service.get_local_file_url if url_type == 'local' else self.minio_service.get_global_file_url
-            img_data = [{'url': get_url_func(a.file_name, a.file_extension), 'name': a.file_name, 'ext': a.file_extension}
-                        for a in msg.attachments]
+            if url_type == 'local':
+                get_url_func = self.minio_service.get_local_file_url
+            elif url_type == 'global':
+                get_url_func = self.minio_service.get_global_file_url
+
+            img_data = [
+                {
+                    'url': get_url_func(a.file_name, a.file_extension),
+                    'name': a.file_name,
+                    'ext': a.file_extension
+                }
+                for a in msg.attachments
+            ]
             result: list[dict[str, str | None]] = []
             for i, data in enumerate(img_data):
                 if i == 10:
@@ -120,19 +131,20 @@ class MediaService:
         Raises:
             NotFoundError: Ничего не найдено
         '''
-        count = 1
         async for data in self.find_media(text, 'global'):
             media = []
             for img_data in data:
                 if img_data['type'] == 'img':
-                    media.append(InlineQueryResultPhoto(
-                        id=str(count),
-                        photo_url=img_data['url'],  # type: ignore
-                        thumbnail_url=img_data['url'],  # type: ignore  # можно уменьшить, но для начала сойдёт
-                        title=(img_data['text'] or '')[:64],
-                        description="Отправлено с канала Хлам"
-                    ))
-                    count += 1
+                    photo_url = img_data['url']
+                    if photo_url:
+                        title = (img_data['text'] or '')[:64]
+                        media.append(InlineQueryResultPhoto(
+                            id=str(uuid.uuid4()),
+                            photo_url=photo_url,
+                            thumbnail_url=photo_url,
+                            title=title,
+                            description="Отправлено с канала Хлам"
+                        ))
             yield media
 
     async def inchat_media(self, text: str) -> AsyncGenerator[list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo], None]:
@@ -166,7 +178,7 @@ class MediaService:
                     kwargs['caption'] = url_global
 
                 if img_data['type'] == 'img':
-                    media.append(InputMediaPhoto(media=buffered_file))
+                    media.append(InputMediaPhoto(media=buffered_file, **kwargs))
                 elif img_data['type'] == 'vid':
-                    media.append(InputMediaVideo(media=buffered_file))
+                    media.append(InputMediaVideo(media=buffered_file, **kwargs))
             yield media
