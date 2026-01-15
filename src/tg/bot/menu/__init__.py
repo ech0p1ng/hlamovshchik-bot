@@ -5,6 +5,8 @@ from aiogram.filters import Command, CommandStart
 from aiogram.types import BufferedInputFile, InputMediaPhoto, InputMediaVideo, InputMediaDocument, InputMediaAudio
 from typing import Any
 
+import minio
+
 from async_requests import download_file
 from dependencies import get_message_service, get_minio_service, get_user_service, get_permission_service
 from db.database import get_db
@@ -102,26 +104,31 @@ async def update_messages_base(message: types.Message) -> None:
 
     await message.answer('Запуск парсинга...')
     show_msg = True
-    skipped = []
+    skipped = set()
     async for db in get_db():
         message_service = await get_message_service(db)
-        async for msg in message_service.parse_all():
-            if show_msg:
-                current = msg['current']
-                skipped += msg['skipped']
-                current_str = ', '.join([str(msg_id) for msg_id in current])
-                skipped_str = ', '.join([str(msg_id) for msg_id in skipped])
-                last = msg['last']
-                first = msg['first']
-                total = msg['total']
-                output = (f'Парсинг...\n\n'
-                          f'ID первого: {first}\n'
-                          f'ID последнего: {last}\n'
-                          f'ID текущих: {current_str}\n' +
-                          (f'ID пропущенных: {skipped_str}\n' if skipped else '') +
-                          f'Итого сообщений за этот момент: {total}')
-                await message.answer(output)
-                await db.commit()
+        try:
+            async for msg in message_service.parse_all():
+                if show_msg:
+                    current = msg['current']
+                    skipped += msg['skipped']
+                    current_str = ', '.join([str(msg_id) for msg_id in current])
+                    skipped_str = ', '.join([str(msg_id) for msg_id in skipped])
+                    last = msg['last']
+                    first = msg['first']
+                    total = msg['total']
+                    output = (f'Парсинг...\n\n'
+                              f'ID первого: {first}\n'
+                              f'ID последнего: {last}\n'
+                              f'ID текущих: {current_str}\n' +
+                              (f'ID пропущенных: {skipped_str}\n' if skipped else '') +
+                              f'Итого сообщений за этот момент: {total}')
+                    await message.answer(output)
+                    await db.commit()
+        except minio.error.S3Error as e:
+            msg = e.message or str(e)
+            logging.error(msg)
+            await message.answer(msg)
 
 
 @router.message(Command("find"))
