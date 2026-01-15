@@ -17,6 +17,7 @@ from message.schemas.schema import MessageCreateSchema
 from message.repositories.repository import MessageRepository
 from attachment.services.service import AttachmentService
 from attachment.models.model import AttachmentModel
+from exceptions.exception import NotFoundError
 
 
 class MessageService(BaseService[MessageModel]):
@@ -229,4 +230,7 @@ class MessageService(BaseService[MessageModel]):
         filter: dict[str, Any],
         model_attrs: list[_AttrType] = [MessageModel.attachments]
     ) -> list[MessageModel]:
-        return await super().find_with_value(filter, model_attrs)
+        try:
+            return await super().find_with_value(filter, model_attrs)
+        except NotFoundError:
+            return []

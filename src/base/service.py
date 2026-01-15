@@ -222,6 +222,9 @@ class BaseService[M]:
             filter (dict[str, Any]): Фильтр для поиска сущности в БД.
             model_attrs (list[_AttrType]): Список атрибутов для подгрузки связанных моделей.
 
+        Raises:
+            NotFoundError: Не найдена сущность
+
         Returns:
             list[BaseModel]: Список найденных сущностей с подгруженными аттрибутами.
         """
