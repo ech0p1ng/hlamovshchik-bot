@@ -25,6 +25,10 @@ class MediaService:
         self.message_service = message_service
         self.minio_service = minio_service
 
+    def __get_msg_url(self, msg_id: int) -> str:
+        settings = get_settings()
+        return f'https://t.me/{settings.telegram.channel_name}/{msg_id}'
+
     async def update_messages_base(self) -> AsyncGenerator[str, None]:
         '''
         Парсинг всех сообщений в канале
@@ -41,14 +45,14 @@ class MediaService:
                 if show_msg:
                     current = msg['current']
                     skipped.update(msg['skipped'])
-                    current_str = ', '.join([str(msg_id) for msg_id in current])
-                    skipped_str = ', '.join([str(msg_id) for msg_id in skipped])
+                    current_str = '\n'.join([self.__get_msg_url(msg_id) for msg_id in current])
+                    skipped_str = '\n'.join([self.__get_msg_url(msg_id) for msg_id in skipped])
                     last = msg['last']
                     first = msg['first']
                     total = msg['total']
                     output = (f'Парсинг...\n\n'
-                              f'ID первого: {first}\n'
-                              f'ID последнего: {last}\n'
+                              f'Первое: {self.__get_msg_url(first)}\n'
+                              f'ID последнего: {self.__get_msg_url(last)}\n'
                               f'ID текущих: {current_str}\n' +
                               (f'ID пропущенных: {skipped_str}\n' if skipped else '') +
                               f'Итого сообщений за этот момент: {total}')
