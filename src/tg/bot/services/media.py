@@ -52,9 +52,9 @@ class MediaService:
                     total = msg['total']
                     output = (f'Парсинг...\n\n'
                               f'Первое: {self.__get_msg_url(first)}\n'
-                              f'ID последнего: {self.__get_msg_url(last)}\n'
-                              f'ID текущих: {current_str}\n' +
-                              (f'ID пропущенных: {skipped_str}\n' if skipped else '') +
+                              f'Последнее: {self.__get_msg_url(last)}\n'
+                              f'Текущие:\n{current_str}\n' +
+                              (f'Пропущенные:\n{skipped_str}\n' if skipped else '') +
                               f'Итого сообщений за этот момент: {total}')
                     await self.db.commit()
                     yield output
