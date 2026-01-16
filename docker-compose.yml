@@ -84,14 +84,14 @@ services:
       MINIO_SECRET_KEY: ${MINIO__SECRET_KEY}
 
   # сервисы для получения и обновления сертификатов
-  # caddy:
-  #   image: caddy
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./Caddyfile:/etc/caddy/Caddyfile
-  #     - ./data/caddy:/data
-  #   restart: unless-stopped
+  caddy:
+    image: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./data/caddy:/data
+    restart: unless-stopped

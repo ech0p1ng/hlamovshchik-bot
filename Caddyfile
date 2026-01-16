@@ -1,3 +1,7 @@
+{
+    auto_https off # отключение автообновления сертификатов
+}
+
 {$MINIO__DOMAIN} {
     reverse_proxy {$MINIO__ENDPOINT}
 
