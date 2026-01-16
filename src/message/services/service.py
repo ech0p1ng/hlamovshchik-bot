@@ -161,7 +161,7 @@ class MessageService(BaseService[MessageModel]):
             raise Exception('Не удалось спарсить сообщения')
         last_msg = parsed[-1]
         last_id = last_msg['id'] + len(last_msg['image_urls']) - 1
-        return last_id  # 10 с запасом на изображения, которые считаются за отдельные сообщения
+        return last_id
 
     async def __get_last_parsed_msg_id(self) -> int:
         value = await self.global_var_service.get_value('last_parsed_msg_id') or 1
@@ -232,7 +232,6 @@ class MessageService(BaseService[MessageModel]):
             else:
                 first_msg_id += 1
             await asyncio.sleep(random.randint(2, 5))
-        
 
     async def parse_all(self) -> AsyncGenerator[dict[str, Any]]:
         '''
