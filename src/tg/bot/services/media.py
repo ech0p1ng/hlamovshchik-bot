@@ -63,6 +63,7 @@ class MediaService:
             message = e.message or str(e)
             logging.error(message)
             yield message
+        yield 'Парсинг завершен'
 
     async def find_media(self, text: str, url_type: Literal['global', 'local']) -> AsyncGenerator[list[dict[str, str | None]], None]:
         '''

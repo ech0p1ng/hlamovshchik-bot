@@ -227,7 +227,10 @@ class MessageService(BaseService[MessageModel]):
                     'skipped': skipped_messages_id,
                     'total': total,
                 }
+            else:
+                first_msg_id += 1
             await asyncio.sleep(random.randint(2, 5))
+        
 
     async def parse_all(self) -> AsyncGenerator[dict[str, Any]]:
         '''
