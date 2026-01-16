@@ -121,4 +121,4 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
             media_service = await get_media_service(db)
             async for media in media_service.inline_media(query_text):
                 all_media += media
-            await inline_query.answer(all_media)
+            await inline_query.answer(all_media[::-1], next_offset="20")
