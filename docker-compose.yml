@@ -41,9 +41,6 @@ services:
 
     volumes:
       - ./data/pgsql:/var/lib/postgresql/${POSTGRES__VERSION}/data
-      - ./scripts/restore-db.sh:/scripts/restore-db.sh
-
-    command: "chmod +x /scripts/restore-db.sh"
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER}"]
@@ -59,8 +56,9 @@ services:
         condition: service_healthy
     volumes:
       - ./backups:/backups   # локальная папка для дампов
+      - ./scripts/restore-db.sh:/scripts/restore-db.sh
     entrypoint: /bin/bash
-    command: -c "while true; do pg_dump -h db -U ${POSTGRES__USER} ${POSTGRES__DB} > /backups/db_$(date +%F_%H-%M-%S).sql; sleep ${POSTGRES__DUMP_TIMEOUT_SECONDS}; done"
+    command: -c "chmod +x /scripts/restore-db.sh && while true; do pg_dump -h db -U ${POSTGRES__USER} ${POSTGRES__DB} > /backups/db_$(date +%F_%H-%M-%S).sql; sleep ${POSTGRES__DUMP_TIMEOUT_SECONDS}; done"
     environment:
       PGPASSWORD: ${POSTGRES__PASSWORD}
     
