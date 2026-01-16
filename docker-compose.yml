@@ -3,7 +3,7 @@ services:
     container_name: app
     build: 
       dockerfile: ./Dockerfile
-      target: devfast # server - для продакшена; dev - для разработки; devfast - для разработки, быстрое развертывание
+      target: server # server - для продакшена; dev - для разработки; devfast - для разработки, быстрое развертывание
       args:
         - POETRY_VERSION=${POETRY_VERSION}
     volumes:
@@ -84,14 +84,14 @@ services:
       MINIO_SECRET_KEY: ${MINIO__SECRET_KEY}
 
   # сервисы для получения и обновления сертификатов
-  caddy:
-    image: caddy
-    ports:
-      - "80:80"
-      - "443:443"
-    env_file:
-      - .env
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./data/caddy:/data
-    restart: unless-stopped
+  # caddy:
+  #   image: caddy
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - ./data/caddy:/data
+  #   restart: unless-stopped
