@@ -147,10 +147,7 @@ class MessageService(BaseService[MessageModel]):
             for i, m in enumerate(messages):
                 if i > self.__parsed_messages_at_once:
                     break
-                try:
-                    data = await self.__parse_data(m)
-                except Exception as e:
-                    continue
+                data = await self.__parse_data(m)
                 if data['text'] != '':
                     parsed_data.append(data)
             return parsed_data
