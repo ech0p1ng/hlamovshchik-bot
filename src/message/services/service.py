@@ -260,8 +260,8 @@ class MessageService(BaseService[MessageModel]):
         self.logger.info('Обновление займет продолжительное время...')
         last_msg_id = await self.__get_last_msg_id()
         first_msg_id = 0
-        async for msg in self.parse(first_msg_id, last_msg_id):
-            yield msg
+        async for msg_batch in self.parse(first_msg_id, last_msg_id):
+            yield msg_batch
 
     async def parse_new(self) -> AsyncGenerator[dict[str, Any]]:
         '''
@@ -286,8 +286,8 @@ class MessageService(BaseService[MessageModel]):
         self.logger.info('Обновление займет продолжительное время...')
         last_msg_id = await self.__get_last_msg_id()
         first_msg_id = await self.__get_last_parsed_msg_id()
-        async for msg in self.parse(first_msg_id, last_msg_id):
-            yield msg
+        async for msg_batch in self.parse(first_msg_id, last_msg_id):
+            yield msg_batch
 
     async def find_with_value(
         self,
