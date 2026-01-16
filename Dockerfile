@@ -15,8 +15,6 @@ RUN mkdir -p /root/.cache/pypoetry/virtualenvs && \
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
 
-RUN poetry env use /usr/local/bin/python
-
 COPY pyproject.toml poetry.lock* /app/
 
 RUN poetry install --no-root --no-ansi
