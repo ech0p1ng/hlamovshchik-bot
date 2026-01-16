@@ -54,9 +54,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - .env
     volumes:
       - ./backups:/backups   # локальная папка для дампов
       - ./scripts/restore-db.sh:/scripts/restore-db.sh
+      - ./scripts/.env:/scripts/.env
     entrypoint: /bin/bash
     command: -c "chmod +x /scripts/restore-db.sh && while true; do pg_dump -h db -U ${POSTGRES__USER} ${POSTGRES__DB} > /backups/db_$(date +%F_%H-%M-%S).sql; sleep ${POSTGRES__DUMP_TIMEOUT_SECONDS}; done"
     environment:
