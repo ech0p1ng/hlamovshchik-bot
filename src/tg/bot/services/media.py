@@ -155,7 +155,7 @@ class MediaService:
             text (str): Текст для поиска
 
         Yields:
-            Iterator[AsyncGenerator[list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo]]]: Список найденных медиа
+            Iterator[AsyncGenerator[list[InputMediaAudio|InputMediaDocument|InputMediaPhoto|InputMediaVideo]]]: Список найденных медиа
 
         Raises:
             NotFoundError: Ничего не найдено
