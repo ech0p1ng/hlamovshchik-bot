@@ -159,7 +159,9 @@ class MessageService(BaseService[MessageModel]):
         parsed = await self.__parse_messages(before=0)
         if parsed is None:
             raise Exception('Не удалось спарсить сообщения')
-        return parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
+        last_msg = parsed[-1]
+        last_id = last_msg['id'] + len(last_msg['image_urls']) - 1
+        return last_id  # 10 с запасом на изображения, которые считаются за отдельные сообщения
 
     async def __get_last_parsed_msg_id(self) -> int:
         value = await self.global_var_service.get_value('last_parsed_msg_id') or 1
