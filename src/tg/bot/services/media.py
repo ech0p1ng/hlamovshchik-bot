@@ -30,15 +30,17 @@ class MediaService:
         settings = get_settings()
         return f'https://t.me/{settings.telegram.channel_name}/{msg_id}'
 
-    async def update_messages_base(self) -> AsyncGenerator[str, None]:
+    async def update_messages_base(self, show_msg=False) -> AsyncGenerator[str, None]:
         '''
         Парсинг всех сообщений в канале
+
+        Args:
+            show_msg (bool): Выводить спаршеные сообщения отправителю. По-умолчанию `False`
 
         Yields:
             Iterator[AsyncGenerator[str]]: Прогресс парсинга
         '''
         yield 'Запуск парсинга...'
-        show_msg = True
         skipped = set()
 
         try:

@@ -71,7 +71,7 @@ async def parse(message: types.Message) -> None:
 
     async for db in get_db():
         media_service = await get_media_service(db)
-        async for msg in media_service.update_messages_base():
+        async for msg in media_service.update_messages_base(show_msg=True):
             await message.answer(msg)
 
 
@@ -123,7 +123,7 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
         async for db in get_db():
             if count >= BATCH_SIZE:
                 break
-            
+
             media_service = await get_media_service(db)
             all_media = []
             async for media in media_service.inline_media(query_text):
