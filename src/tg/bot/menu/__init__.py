@@ -114,11 +114,19 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
     if not permitted or not user:
         return
     # ######################## #
+    BATCH_SIZE = 50
+
     query_text = inline_query.query.strip().lower()
+    offset = int(inline_query.offset or 0)
+
     if query_text and len(query_text) > 1:
         async for db in get_db():
-            all_media = []
             media_service = await get_media_service(db)
+            all_media = []
             async for media in media_service.inline_media(query_text):
                 all_media += media
-            await inline_query.answer(all_media[::-1], next_offset="20")
+
+            batch = all_media[offset:offset + BATCH_SIZE]
+            next_offset = str(offset + BATCH_SIZE) if offset + BATCH_SIZE < len(all_media) else None
+
+            await inline_query.answer(batch, next_offset=next_offset)
