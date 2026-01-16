@@ -41,6 +41,9 @@ services:
 
     volumes:
       - ./data/pgsql:/var/lib/postgresql/${POSTGRES__VERSION}/data
+      - ./scripts/restore-db.sh:/scripts/restore-db.sh
+
+    entrypoint: "chmod +x /scripts/restore-db.sh"
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER}"]
