@@ -118,13 +118,17 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
 
     query_text = inline_query.query.strip().lower()
     offset = int(inline_query.offset or 0)
-
+    count = 1
     if query_text and len(query_text) > 1:
         async for db in get_db():
+            if count >= BATCH_SIZE:
+                break
+            
             media_service = await get_media_service(db)
             all_media = []
             async for media in media_service.inline_media(query_text):
                 all_media += media
+            count += 1
 
             batch = all_media[offset:offset + BATCH_SIZE]
             next_offset = str(offset + BATCH_SIZE) if offset + BATCH_SIZE < len(all_media) else None
