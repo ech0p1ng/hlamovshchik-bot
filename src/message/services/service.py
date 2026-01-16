@@ -162,7 +162,7 @@ class MessageService(BaseService[MessageModel]):
         return parsed[-1]['id'] + 10  # 10 с запасом на изображения, которые считаются за отдельные сообщения
 
     async def __get_last_parsed_msg_id(self) -> int:
-        value = await self.global_var_service.get_value('last_parsed_msg_id') or 0
+        value = await self.global_var_service.get_value('last_parsed_msg_id') or 1
         return int(value)
 
     async def __set_last_parsed_msg_id(self, value: int) -> None:

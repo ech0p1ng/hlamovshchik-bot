@@ -42,7 +42,7 @@ class MediaService:
         skipped = set()
 
         try:
-            async for msg in self.message_service.parse_all():
+            async for msg in self.message_service.parse_new():
                 if show_msg:
                     current = msg['current']
                     skipped.update(msg['skipped'])
