@@ -117,9 +117,8 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
     query_text = inline_query.query.strip().lower()
     if query_text and len(query_text) > 1:
         async for db in get_db():
+            all_media = []
             media_service = await get_media_service(db)
             async for media in media_service.inline_media(query_text):
-                try:
-                    await inline_query.answer(media)  # type: ignore
-                except Exception as e:
-                    pass
+                all_media += media
+            await inline_query.answer(all_media)
