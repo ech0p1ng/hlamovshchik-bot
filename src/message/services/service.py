@@ -86,10 +86,10 @@ class MessageService(BaseService[MessageModel]):
             '.tgme_widget_message.text_not_supported_wrap.js-widget_message',
             limit=1
         )
-        try:
+        if parsed_text:
             message_id = (
                 str(parsed_text[0].get('data-post')).replace(f'{self.__settings.telegram.channel_name}/', ''))
-        except Exception:
+        else:
             return None
         media = message.select('a.tgme_widget_message_photo_wrap')
         image_urls = []
