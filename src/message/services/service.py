@@ -212,6 +212,7 @@ class MessageService(BaseService[MessageModel]):
                         models.append(model)
                         current_messages_id.append(id)
                     except Exception:
+                        first_msg_id = id + 1
                         skipped_messages_id.update([id])
 
                 first_msg_id = int(current_messages_id[-1]) + 1
