@@ -173,7 +173,10 @@ class MessageService(BaseService[MessageModel]):
     async def parse(self, first_msg_id: int, last_msg_id: int) -> AsyncGenerator[dict[str, Any]]:
         '''
         Парсинг сообщений из канала
-
+        
+        Args:
+            first_msg_id (int): ID первого сообщения в очереди на парсинг
+            last_msg_id (int): ID последнего сообщения в очереди на парсинг
         Raises:
             Exception: Не удалось спарсить сообщения
 
@@ -191,20 +194,21 @@ class MessageService(BaseService[MessageModel]):
         ```
         '''
         self.logger.info('Обновление займет продолжительное время...')
-        while first_msg_id < last_msg_id:
-            parsed = await self.__parse_messages(after=first_msg_id)
+        current_msg_id = first_msg_id
+        while current_msg_id < last_msg_id:
+            parsed = await self.__parse_messages(after=current_msg_id)
             models = []
             skipped_messages_id: set[int] = set()
 
             if parsed:
                 current_messages_id = []
                 for m in parsed:
-                    id = int(m['id'])
+                    first_img_id = int(m['id'])
 
                     try:
-                        files: list[tuple[int, str]] = [(id, img_url) for img_url in m['image_urls']]
+                        files: list[tuple[int, str]] = [(first_img_id, img_url) for img_url in m['image_urls']]
                         schema = MessageCreateSchema(
-                            tg_msg_id=id,
+                            tg_msg_id=first_img_id,
                             text=m['text'],
                         )
                         model = await self.create(
@@ -212,25 +216,25 @@ class MessageService(BaseService[MessageModel]):
                             files_info=files
                         )
                         models.append(model)
-                        current_messages_id.append(id)
+                        current_messages_id.append(first_img_id)
+                        current_msg_id += len(files) - 1
                     except Exception:
-                        first_msg_id = id + 1
-                        skipped_messages_id.update([id])
+                        current_msg_id = first_img_id + 1
+                        skipped_messages_id.update([first_img_id])
 
-                first_msg_id = int(current_messages_id[-1]) + 1
-                await self.__set_last_parsed_msg_id(first_msg_id)
+                await self.__set_last_parsed_msg_id(current_msg_id)
                 total = len(models)
 
                 yield {
                     'current': current_messages_id,
-                    'first': int(first_msg_id),
+                    'first': int(current_msg_id),
                     'last': int(last_msg_id),
                     'messages': models,
                     'skipped': skipped_messages_id,
                     'total': total,
                 }
             else:
-                first_msg_id += 1
+                current_msg_id += 1
             await asyncio.sleep(random.randint(2, 5))
 
     async def parse_all(self) -> AsyncGenerator[dict[str, Any]]:
