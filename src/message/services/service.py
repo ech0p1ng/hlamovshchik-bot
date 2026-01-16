@@ -82,15 +82,12 @@ class MessageService(BaseService[MessageModel]):
 
     async def __parse_data(self, message: Tag) -> dict[str, Any]:
         message_text_arr = message.select('.tgme_widget_message_text.js-message_text')
+        parsed_text = message.select(
+            '.tgme_widget_message.text_not_supported_wrap.js-widget_message',
+            limit=1
+        )
         message_id = (
-            str(
-                message
-                .select(
-                    '.tgme_widget_message.text_not_supported_wrap.js-widget_message',
-                    limit=1
-                )[0]
-                .get('data-post')
-            ).replace(f'{self.__settings.telegram.channel_name}/', ''))
+            str(parsed_text[0].get('data-post')).replace(f'{self.__settings.telegram.channel_name}/', ''))
         media = message.select('a.tgme_widget_message_photo_wrap')
         image_urls = []
         for m in media:
@@ -150,7 +147,10 @@ class MessageService(BaseService[MessageModel]):
             for i, m in enumerate(messages):
                 if i > self.__parsed_messages_at_once:
                     break
-                data = await self.__parse_data(m)
+                try:
+                    data = await self.__parse_data(m)
+                except Exception as e:
+                    continue
                 if data['text'] != '':
                     parsed_data.append(data)
             return parsed_data
