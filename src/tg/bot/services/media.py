@@ -176,7 +176,7 @@ class MediaService:
                     file_name = file_data['name']
                     file_ext = file_data['ext']
                     url_global = self.minio_service.get_global_file_url(file_name, file_ext)
-                    caption = url_global
+                    # caption = url_global
 
                 if img_data['type'] == 'img':
                     media.append(InputMediaPhoto(media=buffered_file, caption=caption))
