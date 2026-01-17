@@ -89,10 +89,11 @@ class MediaService:
         found = await self.message_service.find_with_value({'text': text})
 
         if not found:
-            raise NotFoundError('Ничего не найдено')
+            return
+            # raise NotFoundError('Ничего не найдено')
 
         settings = get_settings()
-        
+
         for msg in found:
             if url_type == 'local':
                 get_url_func = self.minio_service.get_local_file_url
@@ -109,8 +110,8 @@ class MediaService:
                         'name': a.file_name,
                         'ext': a.file_extension
                     }
-                )    
-            
+                )
+
             result: list[dict[str, str | None]] = []
             for i, data in enumerate(img_data):
                 if i == 10:
