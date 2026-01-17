@@ -73,14 +73,15 @@ class MediaService:
 
         Args:
             text (str): Текст на картинке
+            url_type (Literal['global', 'local']): `global` - открытый доступ, `local` - внутри локальной сети
 
         Yields:
             Iterator[AsyncGenerator[list[dict[str,str|None]]]]: Список словарей с данными о картинке или сообщение об ошибке
             Словарь:
         ```
         {
+            "url": media_url, [str]
             "text": message_text, [str]
-            "url": img_url, [str]
             "type": "vid" | "img" | None, [str|None]
         }
         ```
@@ -91,20 +92,25 @@ class MediaService:
             raise NotFoundError('Ничего не найдено')
 
         settings = get_settings()
+        
         for msg in found:
             if url_type == 'local':
                 get_url_func = self.minio_service.get_local_file_url
             elif url_type == 'global':
                 get_url_func = self.minio_service.get_global_file_url
+            else:
+                raise AttributeError('Неверный url_type - только local или global')
 
-            img_data = [
-                {
-                    'url': get_url_func(a.file_name, a.file_extension),
-                    'name': a.file_name,
-                    'ext': a.file_extension
-                }
-                for a in msg.attachments
-            ]
+            img_data = []
+            for a in msg.attachments:
+                img_data.append(
+                    {
+                        'url': get_url_func(a.file_name, a.file_extension),
+                        'name': a.file_name,
+                        'ext': a.file_extension
+                    }
+                )    
+            
             result: list[dict[str, str | None]] = []
             for i, data in enumerate(img_data):
                 if i == 10:
@@ -163,25 +169,17 @@ class MediaService:
         Raises:
             NotFoundError: Ничего не найдено
         '''
-        async for data in self.find_media(text, 'local'):
-            media: list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo] = []
-            for i, img_data in enumerate(data):
-                file_data = await download_file(img_data['url'])  # type: ignore
-                file: BytesIO = file_data['file']
-                buffered_file = BufferedInputFile(
-                    file.getvalue(),
-                    f'{file_data['name']}.{file_data['ext']}'
-                )
+        async for all_media_data in self.find_media(text, 'global'):
+            result = []
+            for media_data in all_media_data:
+                media = None
+                file_url = str(media_data['url'])
 
-                caption = None
-                if i == 0:
-                    file_name = file_data['name']
-                    file_ext = file_data['ext']
-                    url_global = self.minio_service.get_global_file_url(file_name, file_ext)
-                    # caption = url_global
+                if media_data['type'] == 'img':
+                    media = InputMediaPhoto(media=file_url)
+                elif media_data['type'] == 'vid':
+                    media = InputMediaVideo(media=file_url)
 
-                if img_data['type'] == 'img':
-                    media.append(InputMediaPhoto(media=buffered_file, caption=caption))
-                elif img_data['type'] == 'vid':
-                    media.append(InputMediaVideo(media=buffered_file, caption=caption))
-            yield media
+                if media:
+                    result.append(media)
+            yield result
