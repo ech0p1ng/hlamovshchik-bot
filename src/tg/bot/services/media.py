@@ -67,7 +67,7 @@ class MediaService:
             yield message
         yield 'Парсинг завершен'
 
-    async def find_media(self, text: str, url_type: Literal['global', 'local'], reversed: bool = False) -> AsyncGenerator[list[dict[str, str | None]], None]:
+    async def find_media(self, text: str, url_type: Literal['global', 'local'], reverse: bool = False) -> AsyncGenerator[list[dict[str, str | None]], None]:
         '''
         Поиск медиа по тексту в канале
 
@@ -88,7 +88,7 @@ class MediaService:
         ```
         '''
         found = await self.message_service.find_with_value({'text': text})
-        if reversed:
+        if reverse:
             found.reverse()
 
         if not found:
@@ -144,7 +144,7 @@ class MediaService:
         Raises:
             NotFoundError: Ничего не найдено
         '''
-        async for data in self.find_media(text, 'global'):
+        async for data in self.find_media(text, url_type='global', reverse=True):
             media = []
             for img_data in data:
                 if img_data['type'] == 'img':
