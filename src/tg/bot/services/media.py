@@ -177,16 +177,21 @@ class MediaService:
         Raises:
             NotFoundError: Ничего не найдено
         '''
-        async for all_media_data in self.find_media(text, 'global'):
+        async for all_media_data in self.find_media(text, 'local'):
             result = []
             for media_data in all_media_data:
                 media = None
-                file_url = str(media_data['url'])
+                file_data = await download_file(media_data['url'])  # type: ignore
+                file: BytesIO = file_data['file']
+                buffered_file = BufferedInputFile(
+                    file.getvalue(),
+                    f'{file_data['name']}.{file_data['ext']}'
+                )
 
                 if media_data['type'] == 'img':
-                    media = InputMediaPhoto(media=file_url)
+                    media = InputMediaPhoto(media=buffered_file)
                 elif media_data['type'] == 'vid':
-                    media = InputMediaVideo(media=file_url)
+                    media = InputMediaVideo(media=buffered_file)
 
                 if media:
                     result.append(media)
