@@ -117,11 +117,10 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
 
     query_text = inline_query.query.strip().lower()
 
-    batch_size = 50
+    limit = 50
     offset = int(inline_query.offset or 0)
 
-    count = 0
-    batch_media = []
+    results = []
     cache_time = 1
     if not query_text or len(query_text) <= 1:
         await inline_query.answer(
@@ -131,28 +130,24 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
         return
 
     async for db in get_db():
-        if count >= batch_size:
-            break
-
         media_service = await get_media_service(db)
 
-        stop_parse = False
         async for chunk in media_service.inline_media(query_text):
             for item in chunk:
-                if count >= offset:
-                    batch_media.append(item)
-                    if len(batch_media) >= batch_size:
-                        stop_parse = True
-                        break
-                count += 1
-            if stop_parse:
-                break
+                results.append(item)
 
-    next_offset = str(offset + len(batch_media)) if len(batch_media) == batch_size else None
-
-    if batch_media:
+    if not results:
         await inline_query.answer(
-            results=batch_media,
+            results=[],
+            cache_time=cache_time
+        )
+        return
+
+    next_offset = str(offset + limit) if len(results) > offset + limit else None
+
+    if results:
+        await inline_query.answer(
+            results=results[offset:offset + limit],
             next_offset=next_offset,
             cache_time=cache_time
         )
