@@ -123,8 +123,8 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
     count = 0
     batch_media = []
 
-    if not query_text or len(query_text) <= 1:
-        return
+    # if not query_text or len(query_text) <= 1:
+    #     return
 
     async for db in get_db():
         if count >= batch_size:
