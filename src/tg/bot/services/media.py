@@ -84,6 +84,8 @@ class MediaService:
             "url": media_url, [str]
             "text": message_text, [str]
             "type": "vid" | "img" | None, [str|None]
+            "name": file_name, [str]
+            "ext": file_ext, [str]
         }
         ```
         '''
@@ -105,9 +107,9 @@ class MediaService:
             else:
                 raise AttributeError('Неверный url_type - только local или global')
 
-            img_data = []
+            media_data = []
             for a in msg.attachments:
-                img_data.append(
+                media_data.append(
                     {
                         'url': get_url_func(a.file_name, a.file_extension),
                         'name': a.file_name,
@@ -116,7 +118,7 @@ class MediaService:
                 )
 
             result: list[dict[str, str | None]] = []
-            for i, data in enumerate(img_data):
+            for i, data in enumerate(media_data):
                 if i == 10:
                     break
                 file_type = None
@@ -128,6 +130,8 @@ class MediaService:
                     'text': msg.text,
                     'url': data['url'],
                     'type': file_type,
+                    'name': data['name'],
+                    'ext': data['ext'],
                 })
             yield result
 
@@ -146,17 +150,17 @@ class MediaService:
         '''
         async for data in self.find_media(text, url_type='global', reverse=True):
             media = []
-            for img_data in data:
-                if img_data['type'] == 'img':
-                    photo_url = img_data['url']
+            for media_data in data:
+                if media_data['type'] == 'img':
+                    photo_url = media_data['url']
                     if photo_url:
-                        title = (img_data['text'] or '')[:64]
+                        title = (media_data['text'] or '')[:64]
                         media.append(InlineQueryResultPhoto(
-                            id=photo_url,  # уникальный и стабильный id
+                            id=f'{media_data['name']}.{media_data['ext']}',  # уникальный и стабильный id
                             photo_url=photo_url,
                             thumbnail_url=photo_url,
                             title=title,
-                            description="Отправлено с канала Хлам"
+                            description=f"Отправлено с канала @{get_settings().telegram.channel_name}"
                         ))
             yield media
 

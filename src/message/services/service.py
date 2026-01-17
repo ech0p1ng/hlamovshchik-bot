@@ -203,12 +203,12 @@ class MessageService(BaseService[MessageModel]):
             if parsed:
                 current_messages_id = []
                 for m in parsed:
-                    first_img_id = int(m['id'])
+                    first_media_id = int(m['id'])
 
                     try:
-                        files: list[tuple[int, str]] = [(first_img_id, img_url) for img_url in m['image_urls']]
+                        files: list[tuple[int, str]] = [(first_media_id, media_url) for media_url in m['image_urls']]
                         schema = MessageCreateSchema(
-                            tg_msg_id=first_img_id,
+                            tg_msg_id=first_media_id,
                             text=m['text'],
                         )
                         model = await self.create(
@@ -216,11 +216,11 @@ class MessageService(BaseService[MessageModel]):
                             files_info=files
                         )
                         models.append(model)
-                        current_messages_id.append(first_img_id)
+                        current_messages_id.append(first_media_id)
                         current_msg_id += len(files)
                     except Exception:
-                        current_msg_id = first_img_id + 1
-                        skipped_messages_id.update([first_img_id])
+                        current_msg_id = first_media_id + 1
+                        skipped_messages_id.update([first_media_id])
 
                 await self.__set_last_parsed_msg_id(current_msg_id)
                 total = len(models)
