@@ -1,4 +1,6 @@
 from typing import Any, AsyncGenerator
+
+from sqlalchemy import UnaryExpression
 import async_requests
 from attachment.schemas.schema import AttachmentSchema
 from base.model import BaseModel
@@ -10,6 +12,7 @@ import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 from sqlalchemy.orm.strategy_options import _AttrType
+from sqlalchemy.sql import Selectable
 
 from base.service import BaseService
 from message.models.model import MessageModel
@@ -173,7 +176,7 @@ class MessageService(BaseService[MessageModel]):
     async def parse(self, first_msg_id: int, last_msg_id: int) -> AsyncGenerator[dict[str, Any]]:
         '''
         Парсинг сообщений из канала
-        
+
         Args:
             first_msg_id (int): ID первого сообщения в очереди на парсинг
             last_msg_id (int): ID последнего сообщения в очереди на парсинг
@@ -292,9 +295,36 @@ class MessageService(BaseService[MessageModel]):
     async def find_with_value(
         self,
         filter: dict[str, Any],
-        model_attrs: list[_AttrType] = [MessageModel.attachments]
+        offset: int = 0,
+        limit: int = 0,
+        order_by: UnaryExpression | None = None,
+        model_attrs: list[_AttrType] = [MessageModel.attachments],
     ) -> list[MessageModel]:
+        '''
+        Поиск сообщений с подгрузкой медиа, если это необходимо.
+
+        Args:
+            filter (dict[str, Any]): Фильтр для поиска сущности в БД.
+            model_attrs (list[_AttrType]): Список SQLAlchemy-атрибутов для подгрузки медиа.
+            order_by (_AttrType|None): Аттрибут для сортировки. По-умолчанию - `None`
+            offset (int): Сдвиг начала. По-умолчанию: `0`
+            limit (int): Ограничение количества. По-умолчанию: `0` - нет ограничений
+
+        Raises:
+            NotFoundError: Не найдена сущность
+
+        Returns:
+            list[BaseModel]: Список найденных сущностей с подгруженными аттрибутами.
+        '''
+        result: list[MessageModel] = []
         try:
-            return await super().find_with_value(filter, model_attrs)
+            result = await super().find_with_value(
+                filter=filter,
+                offset=offset,
+                limit=limit,
+                order_by=order_by,
+                model_attrs=model_attrs,
+            )
         except NotFoundError:
-            return []
+            pass
+        return result

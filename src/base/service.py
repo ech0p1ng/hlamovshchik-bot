@@ -1,4 +1,4 @@
-from sqlalchemy import or_
+from sqlalchemy import Selectable, UnaryExpression, asc, or_
 from typing import Any, TypeVar
 from base.model import BaseModel
 from base.repository import BaseRepository
@@ -213,42 +213,58 @@ class BaseService[M]:
     async def find_with_value(
         self,
         filter: dict[str, Any],
-        model_attrs: list[_AttrType] = []
+        offset: int,
+        limit: int,
+        order_by: UnaryExpression | None = None,
+        model_attrs: list[_AttrType] = [],
     ) -> list[M]:
-        """
+        '''
         Поиск сущностей с подгрузкой связанных моделей, если это необходимо.
 
         Args:
             filter (dict[str, Any]): Фильтр для поиска сущности в БД.
-            model_attrs (list[_AttrType]): Список атрибутов для подгрузки связанных моделей.
+            model_attrs (list[_AttrType]): Список SQLAlchemy-атрибутов для подгрузки связанных моделей.
+            order_by (_AttrType|None): Аттрибут для сортировки. По-умолчанию - `None`
+            offset (int): Сдвиг начала. По-умолчанию: `0`
+            limit (int): Ограничение количества. По-умолчанию: `0` - нет ограничений
 
         Raises:
             NotFoundError: Не найдена сущность
 
         Returns:
             list[BaseModel]: Список найденных сущностей с подгруженными аттрибутами.
-        """
-        results: list[M] = []
+        '''
+        conditions = []
+
         for col_name, values in filter.items():
             column = getattr(self.model_class, col_name)
 
             if isinstance(values, list):
-                statement = select(self.model_class).filter(
+                conditions.append(
                     or_(*[column.ilike(f"%{term}%") for term in values])
                 )
             else:
-                statement = select(self.model_class).filter(
-                    column.ilike(f"%{values}%")
-                )
-            self._add_model_attrs_to_statement(statement, model_attrs)
-            query = await self.repository.db.execute(statement)
+                conditions.append(column.ilike(f"%{values}%"))
 
-            results.extend(query.scalars().all())
+        statement = select(self.model_class).where(*conditions)
 
-        if not results:
+        if order_by is not None:
+            statement = statement.order_by(order_by)
+        else:
+            statement = statement.order_by(asc(self.model_class.id))  # type: ignore
+
+        if offset != 0 and limit != 0:
+            statement = statement.offset(offset).limit(limit)
+
+        self._add_model_attrs_to_statement(statement, model_attrs)
+
+        result = await self.repository.db.execute(statement)
+        rows = result.scalars().all()
+
+        if not rows:
             raise NotFoundError(f'Не найдено ни одной сущности по фильтру: {filter}')
 
-        return results
+        return list(rows)
 
     async def exists(
         self,

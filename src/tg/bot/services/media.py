@@ -16,6 +16,7 @@ import uuid
 
 from async_requests import download_file
 from config import get_settings
+from message.models.model import MessageModel
 from message.services.service import MessageService
 from storage.services.minio_service import MinioService
 from exceptions.exception import NotFoundError
@@ -68,7 +69,14 @@ class MediaService:
             yield message
         yield 'Парсинг завершен'
 
-    async def find_media(self, text: str, url_type: Literal['global', 'local'], reverse: bool = False) -> list[dict[str, str | None]]:
+    async def find_media(
+        self,
+        text: str,
+        url_type: Literal['global', 'local'],
+        reverse: bool = False,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> list[dict[str, str | None]]:
         '''
         Поиск медиа по тексту в канале
 
@@ -90,9 +98,15 @@ class MediaService:
         }
         ```
         '''
-        found = await self.message_service.find_with_value({'text': text})
+        order_by = MessageModel.id.asc()
         if reverse:
-            found.reverse()
+            order_by = MessageModel.id.desc()
+        found = await self.message_service.find_with_value(
+            filter={'text': text},
+            offset=offset,
+            limit=limit,
+            order_by=order_by
+        )
 
         if not found:
             return []
@@ -149,19 +163,20 @@ class MediaService:
             NotFoundError: Ничего не найдено
         '''
         media = []
-        for data in self.find_media(text, url_type='global', reverse=True):
-            for media_data in data:
-                if media_data['type'] == 'img':
-                    photo_url = media_data['url']
-                    if photo_url:
-                        title = (media_data['text'] or '')[:64]
-                        media.append(InlineQueryResultPhoto(
-                            id=hashlib.sha1(str(media_data['url']).encode()).hexdigest(),  # уникальный и стабильный id
-                            photo_url=photo_url,
-                            thumbnail_url=photo_url,
-                            title=title,
-                            description=f"Отправлено с канала @{get_settings().telegram.channel_name}"
-                        ))
+        found = await self.find_media(text, url_type='global', reverse=True)
+        for media_data in found:
+            if media_data['type'] == 'img':
+                photo_url = media_data['url']
+                if not photo_url:
+                    continue
+                title = (media_data['text'] or '')[:64]
+                media.append(InlineQueryResultPhoto(
+                    id=hashlib.sha1(str(media_data['url']).encode()).hexdigest(),  # уникальный и стабильный id
+                    photo_url=photo_url,
+                    thumbnail_url=photo_url,
+                    title=title,
+                    description=f"Отправлено с канала @{get_settings().telegram.channel_name}"
+                ))
         return media
 
     async def inchat_media(self, text: str) -> list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo]:
@@ -178,21 +193,21 @@ class MediaService:
             NotFoundError: Ничего не найдено
         '''
         result = []
-        for all_media_data in self.find_media(text, 'local'):
-            for media_data in all_media_data:
-                media = None
-                file_data = await download_file(media_data['url'])  # type: ignore
-                file: BytesIO = file_data['file']
-                buffered_file = BufferedInputFile(
-                    file.getvalue(),
-                    f'{file_data['name']}.{file_data['ext']}'
-                )
+        found = await self.find_media(text, 'local')
+        for media_data in found:
+            file_data = await download_file(media_data['url'])  # type: ignore
+            file: BytesIO = file_data['file']
+            buffered_file = BufferedInputFile(
+                file.getvalue(),
+                f'{file_data['name']}.{file_data['ext']}'
+            )
 
-                if media_data['type'] == 'img':
-                    media = InputMediaPhoto(media=buffered_file)
-                elif media_data['type'] == 'vid':
-                    media = InputMediaVideo(media=buffered_file)
+            media: InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo | None = None
+            if media_data['type'] == 'img':
+                media = InputMediaPhoto(media=buffered_file)
+            elif media_data['type'] == 'vid':
+                media = InputMediaVideo(media=buffered_file)
 
-                if media:
-                    result.append(media)
+            if media:
+                result.append(media)
         return result

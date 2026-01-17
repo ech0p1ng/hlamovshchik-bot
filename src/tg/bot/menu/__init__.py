@@ -1,5 +1,15 @@
 from aiogram import types, F, Router
 from aiogram.filters import Command, CommandStart
+from aiogram.types import (
+    InputMediaPhoto,
+    InputMediaVideo,
+    InputMediaDocument,
+    InputMediaAudio,
+    InlineQueryResultPhoto,
+    InlineQueryResultVideo,
+    InlineQueryResultDocument,
+    InlineQueryResultAudio,
+)
 from dependencies import (
     get_user_service,
     get_media_service,
@@ -98,11 +108,8 @@ async def find(message: types.Message) -> None:
         media_service = await get_media_service(db)
 
         try:
-            async for media in media_service.inchat_media(query_text):
-                try:
-                    await message.answer_media_group(media)
-                except Exception as e:
-                    pass
+            inline_media_list = await media_service.inchat_media(query_text)
+            await message.answer_media_group(inline_media_list)
         except NotFoundError as e:
             await message.answer(str(e))
 
@@ -132,9 +139,9 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
     async for db in get_db():
         media_service = await get_media_service(db)
 
-        async for chunk in media_service.inline_media(query_text):
-            for item in chunk:
-                results.append(item)
+        media_list = await media_service.inline_media(query_text)
+        for inline_media in media_list:
+            results.append(inline_media)
 
     if not results:
         await inline_query.answer(
@@ -147,7 +154,7 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
 
     if results:
         await inline_query.answer(
-            results=results[offset:offset + limit],
+            results=results[offset:offset + limit],  # type: ignore
             next_offset=next_offset,
             cache_time=cache_time
         )
