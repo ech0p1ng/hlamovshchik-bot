@@ -1,3 +1,4 @@
+import hashlib
 from io import BytesIO
 from aiogram.types import (
     BufferedInputFile,
@@ -156,7 +157,7 @@ class MediaService:
                     if photo_url:
                         title = (media_data['text'] or '')[:64]
                         media.append(InlineQueryResultPhoto(
-                            id=f'{media_data['name']}.{media_data['ext']}',  # уникальный и стабильный id
+                            id=hashlib.sha1(str(media_data['url']).encode()).hexdigest(),  # уникальный и стабильный id
                             photo_url=photo_url,
                             thumbnail_url=photo_url,
                             title=title,
