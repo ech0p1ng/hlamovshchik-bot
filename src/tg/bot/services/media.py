@@ -68,7 +68,7 @@ class MediaService:
             yield message
         yield 'Парсинг завершен'
 
-    async def find_media(self, text: str, url_type: Literal['global', 'local'], reverse: bool = False) -> AsyncGenerator[list[dict[str, str | None]], None]:
+    async def find_media(self, text: str, url_type: Literal['global', 'local'], reverse: bool = False) -> list[dict[str, str | None]]:
         '''
         Поиск медиа по тексту в канале
 
@@ -77,8 +77,8 @@ class MediaService:
             url_type (Literal['global', 'local']): `global` - открытый доступ, `local` - внутри локальной сети
             reversed (bool): В обратном порядке (сначала новые). По-умолчанию - `False`
 
-        Yields:
-            Iterator[AsyncGenerator[list[dict[str,str|None]]]]: Список словарей с данными о картинке или сообщение об ошибке
+        Returns:
+            list[dict[str,str|None]]: Список словарей с данными о картинке или сообщение об ошибке
             Словарь:
         ```
         {
@@ -95,11 +95,11 @@ class MediaService:
             found.reverse()
 
         if not found:
-            return
-            # raise NotFoundError('Ничего не найдено')
+            return []
 
         settings = get_settings()
 
+        result: list[dict[str, str | None]] = []
         for msg in found:
             if url_type == 'local':
                 get_url_func = self.minio_service.get_local_file_url
@@ -118,7 +118,6 @@ class MediaService:
                     }
                 )
 
-            result: list[dict[str, str | None]] = []
             for i, data in enumerate(media_data):
                 if i == 10:
                     break
@@ -134,23 +133,23 @@ class MediaService:
                     'name': data['name'],
                     'ext': data['ext'],
                 })
-            yield result
+        return result
 
-    async def inline_media(self, text: str) -> AsyncGenerator[list[InlineQueryResultPhoto]]:
+    async def inline_media(self, text: str) -> list[InlineQueryResultPhoto]:
         '''
         Медиа при вводе @bot_name в поле ввода сообщения
 
         Args:
             text (str): Текст для поиска
 
-        Yields:
+        Returns:
             list[InlineQueryResultPhoto]: Найденные изображения
 
         Raises:
             NotFoundError: Ничего не найдено
         '''
-        async for data in self.find_media(text, url_type='global', reverse=True):
-            media = []
+        media = []
+        for data in self.find_media(text, url_type='global', reverse=True):
             for media_data in data:
                 if media_data['type'] == 'img':
                     photo_url = media_data['url']
@@ -163,23 +162,23 @@ class MediaService:
                             title=title,
                             description=f"Отправлено с канала @{get_settings().telegram.channel_name}"
                         ))
-            yield media
+        return media
 
-    async def inchat_media(self, text: str) -> AsyncGenerator[list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo], None]:
+    async def inchat_media(self, text: str) -> list[InputMediaAudio | InputMediaDocument | InputMediaPhoto | InputMediaVideo]:
         '''
         Медиа в чате с ботом
 
         Args:
             text (str): Текст для поиска
 
-        Yields:
-            Iterator[AsyncGenerator[list[InputMediaAudio|InputMediaDocument|InputMediaPhoto|InputMediaVideo]]]: Список найденных медиа
+        Returns:
+            list[InputMediaAudio|InputMediaDocument|InputMediaPhoto|InputMediaVideo]: Список найденных медиа
 
         Raises:
             NotFoundError: Ничего не найдено
         '''
-        async for all_media_data in self.find_media(text, 'local'):
-            result = []
+        result = []
+        for all_media_data in self.find_media(text, 'local'):
             for media_data in all_media_data:
                 media = None
                 file_data = await download_file(media_data['url'])  # type: ignore
@@ -196,4 +195,4 @@ class MediaService:
 
                 if media:
                     result.append(media)
-            yield result
+        return result
