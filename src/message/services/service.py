@@ -217,7 +217,7 @@ class MessageService(BaseService[MessageModel]):
                         )
                         models.append(model)
                         current_messages_id.append(first_img_id)
-                        current_msg_id += len(files) - 1
+                        current_msg_id += len(files)
                     except Exception:
                         current_msg_id = first_img_id + 1
                         skipped_messages_id.update([first_img_id])
