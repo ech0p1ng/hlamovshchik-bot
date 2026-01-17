@@ -152,7 +152,7 @@ class MediaService:
                     if photo_url:
                         title = (img_data['text'] or '')[:64]
                         media.append(InlineQueryResultPhoto(
-                            id=str(uuid.uuid4()),
+                            id=photo_url,  # уникальный и стабильный id
                             photo_url=photo_url,
                             thumbnail_url=photo_url,
                             title=title,

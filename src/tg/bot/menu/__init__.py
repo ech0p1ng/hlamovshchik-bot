@@ -122,9 +122,13 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
 
     count = 0
     batch_media = []
-
-    # if not query_text or len(query_text) <= 1:
-    #     return
+    cache_time = 1
+    if not query_text or len(query_text) <= 1:
+        await inline_query.answer(
+            results=[],
+            cache_time=cache_time
+        )
+        return
 
     async for db in get_db():
         if count >= batch_size:
@@ -150,5 +154,5 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
         await inline_query.answer(
             results=batch_media,
             next_offset=next_offset,
-            cache_time=0
+            cache_time=cache_time
         )
