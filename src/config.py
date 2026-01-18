@@ -17,8 +17,10 @@ class MinioSettings(BaseSettings):
     port: int
     port_secure: int
     endpoint: str
+    endpoint_secure: str
     ip: str
     domain: str
+    admin_domain: str
 
 
 class PostgresSettings(BaseSettings):
