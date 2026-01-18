@@ -85,6 +85,9 @@ class MediaService:
             url_type (Literal['global', 'local']): `global` - открытый доступ, `local` - внутри локальной сети
             reversed (bool): В обратном порядке (сначала новые). По-умолчанию - `False`
 
+        Raises:
+            NotFoundError: Не удалось найти
+
         Returns:
             list[dict[str,str|None]]: Список словарей с данными о картинке или сообщение об ошибке
             Словарь:
@@ -101,15 +104,13 @@ class MediaService:
         order_by = MessageModel.id.asc()
         if reverse:
             order_by = MessageModel.id.desc()
+
         found = await self.message_service.find_with_value(
             filter={'text': text},
             offset=offset,
             limit=limit,
             order_by=order_by
         )
-
-        if not found:
-            return []
 
         settings = get_settings()
 
@@ -160,10 +161,11 @@ class MediaService:
             list[InlineQueryResultPhoto]: Найденные изображения
 
         Raises:
-            NotFoundError: Ничего не найдено
+            NotFoundError: Не удалось найти
         '''
         media = []
         found = await self.find_media(text, url_type='global', reverse=True)
+        
         for media_data in found:
             if media_data['type'] == 'img':
                 photo_url = media_data['url']

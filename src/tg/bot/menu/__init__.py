@@ -108,14 +108,21 @@ async def find(message: types.Message) -> None:
         media_service = await get_media_service(db)
 
         try:
-            inline_media_list = await media_service.inchat_media(query_text)
-            await message.answer_media_group(inline_media_list)
+            media_list = await media_service.inchat_media(query_text)
+            if media_list:
+                await message.answer_media_group(media_list)
         except NotFoundError as e:
             await message.answer(str(e))
 
 
 @router.inline_query()
 async def inline_msg(inline_query: types.InlineQuery) -> None:
+    async def __empty_answer(cache_time: int):
+        await inline_query.answer(
+            results=[],
+            cache_time=cache_time
+        )
+
     # ### ПРОВЕРКА ДОСТУПА ### #
     permitted, user = await check_permission(inline_query)
     if not permitted or not user:
@@ -130,24 +137,22 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
     results = []
     cache_time = 1
     if not query_text or len(query_text) <= 1:
-        await inline_query.answer(
-            results=[],
-            cache_time=cache_time
-        )
+        await __empty_answer(cache_time)
         return
 
     async for db in get_db():
         media_service = await get_media_service(db)
+        try:
+            media_list = await media_service.inline_media(query_text)
+        except NotFoundError:
+            await __empty_answer(cache_time)
+            return
 
-        media_list = await media_service.inline_media(query_text)
         for inline_media in media_list:
             results.append(inline_media)
 
     if not results:
-        await inline_query.answer(
-            results=[],
-            cache_time=cache_time
-        )
+        await __empty_answer(cache_time)
         return
 
     next_offset = str(offset + limit) if len(results) > offset + limit else None

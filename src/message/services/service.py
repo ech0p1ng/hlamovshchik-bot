@@ -310,21 +310,13 @@ class MessageService(BaseService[MessageModel]):
             offset (int): Сдвиг начала. По-умолчанию: `0`
             limit (int): Ограничение количества. По-умолчанию: `0` - нет ограничений
 
-        Raises:
-            NotFoundError: Не найдена сущность
-
         Returns:
             list[BaseModel]: Список найденных сущностей с подгруженными аттрибутами.
         '''
-        result: list[MessageModel] = []
-        try:
-            result = await super().find_with_value(
-                filter=filter,
-                offset=offset,
-                limit=limit,
-                order_by=order_by,
-                model_attrs=model_attrs,
-            )
-        except NotFoundError:
-            pass
-        return result
+        return await super().find_with_value(
+            filter=filter,
+            offset=offset,
+            limit=limit,
+            order_by=order_by,
+            model_attrs=model_attrs,
+        )
