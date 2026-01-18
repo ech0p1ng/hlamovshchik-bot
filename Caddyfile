@@ -5,7 +5,7 @@
         Strict-Transport-Security "max-age=31536000"
     }
 }
-${MINIO__ADMIN_DOMAIN} {
+{$MINIO__ADMIN_DOMAIN} {
     reverse_proxy {$MINIO__ENDPOINT_SECURE}
 
     header {
