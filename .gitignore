@@ -211,4 +211,4 @@ data/
 backups/
 certs/
 
-# alembic/versions/*fill_db.py
+alembic/versions/*fill_db.py
