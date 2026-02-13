@@ -1,0 +1,14 @@
+{$MINIO__DOMAIN} {
+    reverse_proxy {$MINIO__ENDPOINT}
+
+    header {
+        Strict-Transport-Security "max-age=31536000"
+    }
+}
+{$MINIO__ADMIN_DOMAIN} {
+    reverse_proxy {$MINIO__ENDPOINT_SECURE}
+
+    header {
+        Strict-Transport-Security "max-age=31536000"
+    }
+}

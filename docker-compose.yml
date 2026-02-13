@@ -1,0 +1,97 @@
+services:
+  app:
+    container_name: app
+    build: 
+      dockerfile: ./Dockerfile
+      target: server # server - для продакшена; dev - для разработки
+      args:
+        - POETRY_VERSION=${POETRY_VERSION}
+    volumes:
+      - ./.env:/app/.env
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./Dockerfile:/app/Dockerfile
+    ports:
+      - "5678:5678"
+  
+    depends_on:
+      db:
+        condition: service_healthy
+
+    env_file:
+      - .env
+  
+  db:
+    container_name: postgres_db
+    image: postgres:${POSTGRES__VERSION}
+    restart: always
+    ports:
+      - "${POSTGRES__PORT}:${POSTGRES__PORT}"
+    environment:
+      POSTGRES_HOST: ${POSTGRES__HOST}
+      POSTGRES_PORT: ${POSTGRES__PORT}
+      POSTGRES_DB: ${POSTGRES__DB}
+      POSTGRES_USER: ${POSTGRES__USER}
+      POSTGRES_PASSWORD: ${POSTGRES__PASSWORD}
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./data/pgsql/${POSTGRES__VERSION}:/var/lib/postgresql/${POSTGRES__VERSION}
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES__USER}"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+
+  db_backup:
+    container_name: db_backup
+    image: postgres:${POSTGRES__VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - ./backups:/backups   # локальная папка для дампов
+      - ./scripts/restore-db.sh:/scripts/restore-db.sh
+      - ./scripts/.env:/scripts/.env
+    entrypoint: /bin/bash
+    command: -c "chmod +x /scripts/restore-db.sh && while true; do pg_dump -h db -U ${POSTGRES__USER} ${POSTGRES__DB} > /backups/db_$(date +%F_%H-%M-%S).sql; sleep ${POSTGRES__DUMP_TIMEOUT_SECONDS}; done"
+    environment:
+      PGPASSWORD: ${POSTGRES__PASSWORD}
+    
+  minio:
+    container_name: minio
+    image: minio/minio:latest
+    entrypoint: /bin/sh
+    command: -c "mkdir -p /data/private-bucket && minio server /data --console-address ':9001'"
+    expose:
+      - "${MINIO__PORT}"
+      - "${MINIO__PORT_SECURE}"
+    env_file:
+      - .env
+    volumes:
+      - ./data/minio:/data
+    environment:
+      # MINIO_ROOT_USER: ${MINIO__ROOT_USER}
+      # MINIO_ROOT_PASSWORD: ${MINIO__ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO__ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO__SECRET_KEY}
+
+  # сервисы для получения и обновления сертификатов
+  caddy:
+    image: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./data/caddy:/data
+    restart: unless-stopped
