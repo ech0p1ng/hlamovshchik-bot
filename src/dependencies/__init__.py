@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
+from bot_request.services.service import BotRequestService
 from config import get_settings
 from db.database import async_engine
 from role.services.service import RoleService
@@ -67,3 +68,7 @@ async def get_media_service(db: AsyncSession) -> MediaService:
         await get_message_service(db),
         get_minio_service(),
     )
+
+
+async def get_bot_request_service(db: AsyncSession) -> BotRequestService:
+    return BotRequestService(db)

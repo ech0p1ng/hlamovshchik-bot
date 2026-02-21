@@ -20,7 +20,6 @@ class BotRequestModel(BaseModel):
         user_id (Mapped[int]): Идентификатор пользователя
         user (Mapped[UserModel]): Пользователь
         text (Mapped[str]): Текст сообщения
-        sended_pic_url (Mapped[str]): URL отправленного изображения
         send_datetime (datetime): Дата и время отправки запроса
     '''
     __tablename__ = 'bot_request'
@@ -32,14 +31,14 @@ class BotRequestModel(BaseModel):
 
     user: Mapped['UserModel'] = relationship(
         'UserModel',
-        backpopulates='bot_requests',
+        back_populates='bot_requests',
         foreign_keys=[user_id],
         lazy='selectin'
     )
 
     text: Mapped[str] = mapped_column()
 
-    sended_pic_url: Mapped[str] = mapped_column()
+    # sended_pic_url: Mapped[str] = mapped_column()
     
     send_datetime: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -51,12 +50,12 @@ class BotRequestModel(BaseModel):
             self_stats = (
                 self.user_id,
                 self.text,
-                self.sended_pic_url,
+                # self.sended_pic_url,
             )
             value_stats = (
                 value.user_id,
                 value.text,
-                value.sended_pic_url,
+                # value.sended_pic_url,
             )
             return self_stats == value_stats
         else:
@@ -76,16 +75,14 @@ class BotRequestModel(BaseModel):
         Returns:
             BotRequestModel: SQL Alchemy модель запроса
         '''
-        from user.models.model import UserModel
         if type(schema) in (BotRequestSimpleSchema, BotRequestSchema):
             return cls(
-                tg_msg_id=schema.user_id,
+                user_id=schema.user_id,
                 text=schema.text,
-                user=UserModel.from_schema(schema.user)
             )
         elif type(schema) is BotRequestCreateSchema:
             return cls(
-                tg_msg_id=schema.user_id,
+                user_id=schema.user_id,
                 text=schema.text,
             )
         return cls()

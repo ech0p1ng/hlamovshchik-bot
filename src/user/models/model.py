@@ -4,9 +4,9 @@ from sqlalchemy import ForeignKey
 from base.model import BaseModel
 from user.schemas.schema import UserSchema, UserSimpleSchema
 from typing import TYPE_CHECKING
+from bot_request.models.model import BotRequestModel
 
 if TYPE_CHECKING:
-    from bot_request.models.model import BotRequestModel
     from role.models.model import RoleModel
 
 
@@ -30,7 +30,7 @@ class UserModel(BaseModel):
         lazy='selectin',
     )
     
-    bot_requests: Mapped[list['BotRequestModel']] = relationship(
+    bot_requests: Mapped[list[BotRequestModel]] = relationship(
         'BotRequestModel',
         back_populates='user',
         uselist=True,

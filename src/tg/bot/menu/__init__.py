@@ -10,9 +10,13 @@ from aiogram.types import (
     InlineQueryResultDocument,
     InlineQueryResultAudio,
 )
+
+from bot_request.schemas.schema import BotRequestCreateSchema
+from bot_request.models.model import BotRequestModel
 from dependencies import (
     get_user_service,
     get_media_service,
+    get_bot_request_service
 )
 from db.database import get_db
 from user.models.model import UserModel
@@ -101,6 +105,14 @@ async def find(message: types.Message) -> None:
 
         query_text = message.text[len("/find "):].strip().lower()
 
+        bot_request_service = await get_bot_request_service(db)
+        await bot_request_service.create(
+            BotRequestModel.from_schema(BotRequestCreateSchema(
+                user_id=user.id,
+                text=query_text,
+            ))
+        )
+
         if not query_text:
             await message.reply(error_msg)
             return
@@ -111,8 +123,8 @@ async def find(message: types.Message) -> None:
             media_list = await media_service.inchat_media(query_text)
             if media_list:
                 await message.answer_media_group(media_list)
-        except NotFoundError as e:
-            await message.answer(str(e))
+        except NotFoundError:
+            await message.answer(f'Ничего не найдено с текстом "{query_text}"')
 
 
 @router.inline_query()
@@ -142,6 +154,15 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
 
     async for db in get_db():
         media_service = await get_media_service(db)
+
+        bot_request_service = await get_bot_request_service(db)
+        await bot_request_service.create(
+            BotRequestModel.from_schema(BotRequestCreateSchema(
+                user_id=user.id,
+                text=query_text,
+            ))
+        )
+
         try:
             media_list = await media_service.inline_media(query_text)
         except NotFoundError:

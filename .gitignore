@@ -212,3 +212,4 @@ backups/
 certs/
 
 alembic/versions/*fill_db.py
+requests.sql

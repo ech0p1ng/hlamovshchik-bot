@@ -1,27 +1,14 @@
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from sqlalchemy import UnaryExpression
-import async_requests
-from attachment.schemas.schema import AttachmentSchema
-from base.model import BaseModel
 from config import get_settings
-from bs4 import Tag
-from bs4 import BeautifulSoup as bs
-import random
-import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 from sqlalchemy.orm.strategy_options import _AttrType
-from sqlalchemy.sql import Selectable
 
 from base.service import BaseService
 from bot_request.models.model import BotRequestModel
-from bot_request.schemas.schema import BotRequestCreateSchema
 from bot_request.repositories.repository import BotRequestRepository
-from attachment.services.service import AttachmentService
-from attachment.models.model import AttachmentModel
-from exceptions.exception import NotFoundError
-from global_var.services.service import GlobalVarService
 
 
 class BotRequestService(BaseService[BotRequestModel]):
@@ -29,7 +16,7 @@ class BotRequestService(BaseService[BotRequestModel]):
     Бизнес-логика запросов боту
     '''
 
-    def __init__(self, db: AsyncSession, attachment_service: AttachmentService, global_var_service: GlobalVarService):
+    def __init__(self, db: AsyncSession):
         '''
         Бизнес-логика запросов боту
 
@@ -43,26 +30,20 @@ class BotRequestService(BaseService[BotRequestModel]):
             multiple_models_name="запросы боту"
         )
         self.db = db
-        self.attachment_service = attachment_service
-        self.global_var_service = global_var_service
         self.logger = logging.getLogger('tg_logger')
-        self.__settings = get_settings()
-        self.__parsed_bot_requests_at_once = 15
 
     async def create(
         self,
         model: BotRequestModel,
-        # files_info: list[tuple[int, str]] | None = None
     ) -> BotRequestModel:
         '''
         Создать сообщение
 
         Args:
-            model (BotRequestModel): SQL Alchemy модель сообщения
-            files_info (list[tuple[int,str]]): Список `ID сообщения` и `URL медиа-контента`
+            model (BotRequestModel): SQL Alchemy модель запроса боту
 
         Returns:
-            BotRequestModel: SQLAlchemy-модель сообщения
+            BotRequestModel: SQLAlchemy-модель запроса боту
 
         Raises:
             WasNotCreatedError: Не удалось создать сообщение

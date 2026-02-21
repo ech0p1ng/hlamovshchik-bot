@@ -11,6 +11,7 @@ from user.models.model import UserModel
 from botcommand.models.model import BotCommandModel
 from role.models.model import RoleModel
 from permission.models.model import PermissionModel
+from bot_request.models.model import BotRequestModel
 from config import get_settings
 
 # this is the Alembic Config object, which provides
