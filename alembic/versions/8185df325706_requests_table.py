@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table('bot_request',
     sa.Column('user_id', sa.BigInteger(), nullable=False),
     sa.Column('text', sa.String(), nullable=False),
-    # sa.Column('sended_pic_url', sa.String(), nullable=False),
+    sa.Column('request_type', sa.String(), nullable=False),
     sa.Column('send_datetime', sa.DateTime(timezone=True), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),

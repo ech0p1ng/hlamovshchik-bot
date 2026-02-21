@@ -21,6 +21,7 @@ class BotRequestModel(BaseModel):
         user (Mapped[UserModel]): Пользователь
         text (Mapped[str]): Текст сообщения
         send_datetime (datetime): Дата и время отправки запроса
+        request_type (str): Тип запроса (inline, chat и т.п.)
     '''
     __tablename__ = 'bot_request'
 
@@ -37,9 +38,10 @@ class BotRequestModel(BaseModel):
     )
 
     text: Mapped[str] = mapped_column()
+    request_type: Mapped[str] = mapped_column()
 
     # sended_pic_url: Mapped[str] = mapped_column()
-    
+
     send_datetime: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC)
@@ -79,10 +81,12 @@ class BotRequestModel(BaseModel):
             return cls(
                 user_id=schema.user_id,
                 text=schema.text,
+                request_type=schema.request_type,
             )
         elif type(schema) is BotRequestCreateSchema:
             return cls(
                 user_id=schema.user_id,
                 text=schema.text,
+                request_type=schema.request_type,
             )
         return cls()

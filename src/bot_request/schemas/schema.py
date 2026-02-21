@@ -11,6 +11,7 @@ class BotRequestCreateSchema(BaseSimpleSchema):
         user_id (int): Идентификатор пользователя
         text (str): Текст запроса боту
         send_datetime (datetime): Дата и время отправки запроса боту
+        request_type (str): Тип запроса (inline, chat и т.п.)
     '''
     user_id: int
     text: str
@@ -18,6 +19,7 @@ class BotRequestCreateSchema(BaseSimpleSchema):
     send_datetime: datetime = Field(
         default_factory=lambda: datetime.now(UTC)
     )
+    request_type: str
 
 
 class BotRequestSimpleSchema(BaseSimpleSchema):
@@ -27,11 +29,11 @@ class BotRequestSimpleSchema(BaseSimpleSchema):
     Args:
         user_id (int): Идентификатор пользователя
         text (str): Текст запроса боту
-        send_datetime (datetime): Дата и время отправки запроса боту
+        request_type (str): Тип запроса (inline, chat и т.п.)
     '''
     user_id: int
     text: str
-    # sended_pic_url: str
+    request_type: str
     send_datetime: datetime
 
 
@@ -43,9 +45,9 @@ class BotRequestSchema(BaseSchema):
         id (int): ID запроса боту
         user_id (int): Идентификатор пользователя
         text (str): Текст запроса боту
-        send_datetime (datetime): Дата и время отправки запроса боту
+        request_type (str): Тип запроса (inline, chat и т.п.)
     '''
     user_id: int
     text: str
-    # sended_pic_url: str
+    request_type: str
     send_datetime: datetime

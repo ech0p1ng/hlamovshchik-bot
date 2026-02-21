@@ -110,6 +110,7 @@ async def find(message: types.Message) -> None:
             BotRequestModel.from_schema(BotRequestCreateSchema(
                 user_id=user.id,
                 text=query_text,
+                request_type='chat'
             ))
         )
 
@@ -160,6 +161,7 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
             BotRequestModel.from_schema(BotRequestCreateSchema(
                 user_id=user.id,
                 text=query_text,
+                request_type='inline',
             ))
         )
 
