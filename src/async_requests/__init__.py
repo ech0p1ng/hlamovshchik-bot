@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import Any
 import httpx
+import asyncio
 
 
 REQUEST_HEADERS = {
@@ -11,12 +12,14 @@ REQUEST_HEADERS = {
 }
 
 
-async def get(url: str) -> httpx.Response:
+async def get(url: str, max_retries: int = 10, delay_seconds: int = 5) -> httpx.Response:
     '''
     Асинхронный GET-запрос
 
     Args:
         url (str): URL
+        max_retries (int, optional): Максимальное количество попыток. По умолчанию: `10`.
+        delay_seconds (int, optional): Время ожидания после неудачной попытки. По умолчанию: `5`.
 
     Raises:
         httpx.HTTPError: Не удалось загрузить
@@ -24,13 +27,21 @@ async def get(url: str) -> httpx.Response:
     Returns:
         httpx.Response: Ответ сервера
     '''
-
+    msg = f'Не удалось загрузить {url}: Неизвестная ошибка'
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=REQUEST_HEADERS)
-        if response.status_code != 200:
+        for retry in range(1, max_retries + 1):
+            response = await client.get(url, headers=REQUEST_HEADERS)
+            
+            if response.status_code == 502:
+                await asyncio.sleep(delay_seconds * 2 ** (retry - 1))
+                continue
+            
+            if response.status_code == 200:
+                return response
+            
             msg = f'Не удалось загрузить {url}: {response.status_code}'
-            raise httpx.HTTPError(msg)
-        return response
+    
+    raise httpx.HTTPError(msg)
 
 
 async def download_file(url: str) -> dict[str, Any]:

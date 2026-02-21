@@ -25,6 +25,26 @@ from exceptions.exception import NotFoundError
 router = Router()
 
 
+async def send_single_media(
+    message: types.Message,
+    media: InputMediaPhoto | InputMediaVideo | InputMediaDocument | InputMediaAudio
+) -> None:
+    if isinstance(media, InputMediaPhoto):
+        await message.answer_photo(media.media, caption=media.caption)
+
+    elif isinstance(media, InputMediaVideo):
+        await message.answer_video(media.media, caption=media.caption)
+
+    elif isinstance(media, InputMediaDocument):
+        await message.answer_document(media.media, caption=media.caption)
+
+    elif isinstance(media, InputMediaAudio):
+        await message.answer_audio(media.media, caption=media.caption)
+
+    else:
+        raise ValueError("Unsupported media type")
+
+
 async def check_permission(message: types.Message | types.InlineQuery) -> tuple[bool, UserModel | None]:
     '''
     Проверка доступа пользователя, отправившего сообщение
@@ -122,10 +142,21 @@ async def find(message: types.Message) -> None:
 
         try:
             media_list = await media_service.inchat_media(query_text)
-            if media_list:
+
+            if not media_list:
+                raise NotFoundError(f'Ничего не найдено с текстом "{query_text}"')
+
+            if len(media_list) == 1:
+                await send_single_media(message, media_list[0])
+            elif len(media_list) > 10:
+                for i in range(0, len(media_list), 10):
+                    chunk = media_list[i:i + 10]
+                    await message.answer_media_group(chunk)
+            else:
                 await message.answer_media_group(media_list)
-        except NotFoundError:
-            await message.answer(f'Ничего не найдено с текстом "{query_text}"')
+
+        except NotFoundError as e:
+            await message.answer(str(e))
 
 
 @router.inline_query()
