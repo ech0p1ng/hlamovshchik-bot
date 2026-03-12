@@ -146,6 +146,7 @@ class MediaService:
                 result.append({
                     'text': msg.text,
                     'url': data['url'],
+                    'thumbnail_url': data['thumbnail_url'],
                     'type': file_type,
                     'name': data['name'],
                     'ext': data['ext'],
