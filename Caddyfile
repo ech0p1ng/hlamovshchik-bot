@@ -1,8 +1,6 @@
 {$MINIO__DOMAIN} {
-
     encode gzip
 
-    # Общие заголовки
     header {
         Access-Control-Allow-Origin *
         Cache-Control "public, max-age=31536000, immutable"
@@ -10,45 +8,48 @@
 
     # --- Thumbnails ---
     handle_path /t/* {
-        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+        route {
+            reverse_proxy minio:9000 {
+                header_up Host {host}
+            }
 
-        reverse_proxy minio:9000 {
-            header_up Host {host}
+            # Перезаписываем Content-Type после прокси
+            handle_response {
+                @jpg path *.jpg
+                header Content-Type image/jpeg @jpg
 
-            # Контент-тайпы
-            @jpg path_regexp jpg \.jpg$
-            header_down @jpg Content-Type image/jpeg
+                @jpeg path *.jpeg
+                header Content-Type image/jpeg @jpeg
 
-            @jpeg path_regexp jpeg \.jpeg$
-            header_down @jpeg Content-Type image/jpeg
+                @png path *.png
+                header Content-Type image/png @png
 
-            @png path_regexp png \.png$
-            header_down @png Content-Type image/png
-
-            @webp path_regexp webp \.webp$
-            header_down @webp Content-Type image/webp
+                @webp path *.webp
+                header Content-Type image/webp @webp
+            }
         }
     }
 
     # --- Originals ---
     handle_path /i/* {
-        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+        route {
+            reverse_proxy minio:9000 {
+                header_up Host {host}
+            }
 
-        reverse_proxy minio:9000 {
-            header_up Host {host}
+            handle_response {
+                @jpg path *.jpg
+                header Content-Type image/jpeg @jpg
 
-            # Контент-тайпы
-            @jpg path_regexp jpg \.jpg$
-            header_down @jpg Content-Type image/jpeg
+                @jpeg path *.jpeg
+                header Content-Type image/jpeg @jpeg
 
-            @jpeg path_regexp jpeg \.jpeg$
-            header_down @jpeg Content-Type image/jpeg
+                @png path *.png
+                header Content-Type image/png @png
 
-            @png path_regexp png \.png$
-            header_down @png Content-Type image/png
-
-            @webp path_regexp webp \.webp$
-            header_down @webp Content-Type image/webp
+                @webp path *.webp
+                header Content-Type image/webp @webp
+            }
         }
     }
 
@@ -62,7 +63,6 @@
     }
 }
 
-# --- MinIO Admin Console ---
 {$MINIO__ADMIN_DOMAIN} {
     reverse_proxy {$MINIO__ENDPOINT_SECURE}
 
