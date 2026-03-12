@@ -1,10 +1,21 @@
 {$MINIO__DOMAIN} {
     encode gzip
 
+    # Общие заголовки
     header {
         Access-Control-Allow-Origin *
         Cache-Control "public, max-age=31536000, immutable"
     }
+
+    # Path matchers для изображений
+    @jpg path /t/*.jpg /t/*.jpeg /i/*.jpg /i/*.jpeg
+    @png path /t/*.png /i/*.png
+    @webp path /t/*.webp /i/*.webp
+
+    # Заголовки Content-Type
+    header @jpg Content-Type image/jpeg
+    header @png Content-Type image/png
+    header @webp Content-Type image/webp
 
     # Thumbnails
     handle_path /t/* {
@@ -12,16 +23,6 @@
         reverse_proxy minio:{$MINIO__PORT} {
             header_up Host {host}
         }
-        # Простейший вариант: Content-Type через path matcher
-        @jpg path *.jpg
-        @jpeg path *.jpeg
-        @png path *.png
-        @webp path *.webp
-
-        header @jpg Content-Type image/jpeg
-        header @jpeg Content-Type image/jpeg
-        header @png Content-Type image/png
-        header @webp Content-Type image/webp
     }
 
     # Originals
@@ -30,16 +31,6 @@
         reverse_proxy minio:{$MINIO__PORT} {
             header_up Host {host}
         }
-
-        @jpg path *.jpg
-        @jpeg path *.jpeg
-        @png path *.png
-        @webp path *.webp
-
-        header @jpg Content-Type image/jpeg
-        header @jpeg Content-Type image/jpeg
-        header @png Content-Type image/png
-        header @webp Content-Type image/webp
     }
 }
 
