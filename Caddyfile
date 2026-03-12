@@ -6,60 +6,40 @@
         Cache-Control "public, max-age=31536000, immutable"
     }
 
-    # --- Thumbnails ---
+    # Thumbnails
     handle_path /t/* {
-        route {
-            reverse_proxy minio:9000 {
-                header_up Host {host}
-            }
-
-            # Перезаписываем Content-Type после прокси
-            handle_response {
-                @jpg path *.jpg
-                header Content-Type image/jpeg @jpg
-
-                @jpeg path *.jpeg
-                header Content-Type image/jpeg @jpeg
-
-                @png path *.png
-                header Content-Type image/png @png
-
-                @webp path *.webp
-                header Content-Type image/webp @webp
-            }
+        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+        reverse_proxy minio:${MINIO__PORT} {
+            header_up Host {host}
         }
+        # Простейший вариант: Content-Type через path matcher
+        @jpg path *.jpg
+        @jpeg path *.jpeg
+        @png path *.png
+        @webp path *.webp
+
+        header @jpg Content-Type image/jpeg
+        header @jpeg Content-Type image/jpeg
+        header @png Content-Type image/png
+        header @webp Content-Type image/webp
     }
 
-    # --- Originals ---
+    # Originals
     handle_path /i/* {
-        route {
-            reverse_proxy minio:9000 {
-                header_up Host {host}
-            }
-
-            handle_response {
-                @jpg path *.jpg
-                header Content-Type image/jpeg @jpg
-
-                @jpeg path *.jpeg
-                header Content-Type image/jpeg @jpeg
-
-                @png path *.png
-                header Content-Type image/png @png
-
-                @webp path *.webp
-                header Content-Type image/webp @webp
-            }
+        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+        reverse_proxy minio:${MINIO__PORT} {
+            header_up Host {host}
         }
-    }
 
-    # --- Кэширование ---
-    handle_path /t/* /i/* {
-        cache {
-            path /data/caddy-cache
-            ttl 24h
-            stale 12h
-        }
+        @jpg path *.jpg
+        @jpeg path *.jpeg
+        @png path *.png
+        @webp path *.webp
+
+        header @jpg Content-Type image/jpeg
+        header @jpeg Content-Type image/jpeg
+        header @png Content-Type image/png
+        header @webp Content-Type image/webp
     }
 }
 
