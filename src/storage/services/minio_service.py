@@ -4,13 +4,14 @@ import ssl
 import uuid
 import json
 import asyncio
+import mimetypes
 from minio import Minio
 from minio.error import S3Error
 from urllib3 import PoolManager, disable_warnings
 
 from config import get_settings
-from exceptions.exception import FileIsTooLargeError, WasNotCreatedError
 from attachment.schemas.schema import AttachmentMinioSchema
+from exceptions.exception import FileIsTooLargeError, WasNotCreatedError
 
 
 class MinioService:
@@ -95,7 +96,6 @@ class MinioService:
     async def upload_file(
         self,
         file: BytesIO,
-        # file_name: str,
         file_ext: str
     ) -> AttachmentMinioSchema:
         '''
@@ -126,25 +126,30 @@ class MinioService:
 
             if file_size > self.__settings.attachment.max_size:
                 raise FileIsTooLargeError(
-                    "Максимальный размер файла - "
-                    f"{self.__settings.attachment.max_size / 1024} Кбайт"
-                )
-            else:
-                await asyncio.to_thread(
-                    self.client.put_object,
-                    self.bucket_name,
-                    full_file_name,
-                    file,
-                    file_size,
-                    content_type=f"image/{file_ext.lower()}"
+                    f"Максимальный размер файла - {self.__settings.attachment.max_size / 1024} Кбайт"
                 )
 
-                return AttachmentMinioSchema(
-                    # minio_file_url='http://' + url,
-                    file_name=safe_name,
-                    file_extension=file_ext,
-                    file_size=file_size
-                )
+            # Определяем корректный MIME для файла
+            mime_type, _ = mimetypes.guess_type(full_file_name)
+            if mime_type is None:
+                # fallback на octet-stream, если неизвестно
+                mime_type = "application/octet-stream"
+
+            await asyncio.to_thread(
+                self.client.put_object,
+                self.bucket_name,
+                full_file_name,
+                file,
+                file_size,
+                content_type=mime_type
+            )
+
+            return AttachmentMinioSchema(
+                file_name=safe_name,
+                file_extension=file_ext,
+                file_size=file_size
+            )
+
         except S3Error as exc:
             raise WasNotCreatedError(exc)
 
