@@ -9,7 +9,7 @@
     # Thumbnails
     handle_path /t/* {
         rewrite * /{$MINIO__BUCKET_NAME}{uri}
-        reverse_proxy minio:${MINIO__PORT} {
+        reverse_proxy minio:{$MINIO__PORT} {
             header_up Host {host}
         }
         # Простейший вариант: Content-Type через path matcher
@@ -27,7 +27,7 @@
     # Originals
     handle_path /i/* {
         rewrite * /{$MINIO__BUCKET_NAME}{uri}
-        reverse_proxy minio:${MINIO__PORT} {
+        reverse_proxy minio:{$MINIO__PORT} {
             header_up Host {host}
         }
 
