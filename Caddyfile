@@ -9,45 +9,37 @@
     # Thumbnails
     handle_path /t/* {
         rewrite * /{$MINIO__BUCKET_NAME}{uri}
-        reverse_proxy minio:${MINIO__PORT} {
+        reverse_proxy minio:{$MINIO__PORT} {
             header_up Host {host}
         }
-
-        @jpg path *.jpg *.jpeg
+        # Простейший вариант: Content-Type через path matcher
+        @jpg path *.jpg
+        @jpeg path *.jpeg
         @png path *.png
         @webp path *.webp
 
-        handle_response @jpg {
-            header Content-Type image/jpeg
-        }
-        handle_response @png {
-            header Content-Type image/png
-        }
-        handle_response @webp {
-            header Content-Type image/webp
-        }
+        header @jpg Content-Type image/jpeg
+        header @jpeg Content-Type image/jpeg
+        header @png Content-Type image/png
+        header @webp Content-Type image/webp
     }
 
     # Originals
     handle_path /i/* {
         rewrite * /{$MINIO__BUCKET_NAME}{uri}
-        reverse_proxy minio:${MINIO__PORT} {
+        reverse_proxy minio:{$MINIO__PORT} {
             header_up Host {host}
         }
 
-        @jpg path *.jpg *.jpeg
+        @jpg path *.jpg
+        @jpeg path *.jpeg
         @png path *.png
         @webp path *.webp
 
-        handle_response @jpg {
-            header Content-Type image/jpeg
-        }
-        handle_response @png {
-            header Content-Type image/png
-        }
-        handle_response @webp {
-            header Content-Type image/webp
-        }
+        header @jpg Content-Type image/jpeg
+        header @jpeg Content-Type image/jpeg
+        header @png Content-Type image/png
+        header @webp Content-Type image/webp
     }
 }
 
