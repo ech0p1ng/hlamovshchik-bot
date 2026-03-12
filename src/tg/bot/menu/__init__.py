@@ -217,4 +217,5 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
             next_offset=next_offset,
             cache_time=cache_time,
             switch_pm_text="Открыть бота",
+            switch_pm_parameter="start"
         )
