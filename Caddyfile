@@ -14,18 +14,20 @@
 
         reverse_proxy minio:9000 {
             header_up Host {host}
+
+            # Контент-тайпы
+            @jpg path_regexp jpg \.jpg$
+            header_down @jpg Content-Type image/jpeg
+
+            @jpeg path_regexp jpeg \.jpeg$
+            header_down @jpeg Content-Type image/jpeg
+
+            @png path_regexp png \.png$
+            header_down @png Content-Type image/png
+
+            @webp path_regexp webp \.webp$
+            header_down @webp Content-Type image/webp
         }
-
-        # Контент-тайпы по расширениям
-        @jpg path_regexp jpg \.jpg$
-        @jpeg path_regexp jpeg \.jpeg$
-        @png path_regexp png \.png$
-        @webp path_regexp webp \.webp$
-
-        header_down @jpg Content-Type image/jpeg
-        header_down @jpeg Content-Type image/jpeg
-        header_down @png Content-Type image/png
-        header_down @webp Content-Type image/webp
     }
 
     # --- Originals ---
@@ -34,18 +36,20 @@
 
         reverse_proxy minio:9000 {
             header_up Host {host}
+
+            # Контент-тайпы
+            @jpg path_regexp jpg \.jpg$
+            header_down @jpg Content-Type image/jpeg
+
+            @jpeg path_regexp jpeg \.jpeg$
+            header_down @jpeg Content-Type image/jpeg
+
+            @png path_regexp png \.png$
+            header_down @png Content-Type image/png
+
+            @webp path_regexp webp \.webp$
+            header_down @webp Content-Type image/webp
         }
-
-        # Контент-тайпы по расширениям
-        @jpg path_regexp jpg \.jpg$
-        @jpeg path_regexp jpeg \.jpeg$
-        @png path_regexp png \.png$
-        @webp path_regexp webp \.webp$
-
-        header_down @jpg Content-Type image/jpeg
-        header_down @jpeg Content-Type image/jpeg
-        header_down @png Content-Type image/png
-        header_down @webp Content-Type image/webp
     }
 
     # --- Кэширование ---
@@ -58,7 +62,7 @@
     }
 }
 
-# Admin panel (MinIO Console)
+# --- MinIO Admin Console ---
 {$MINIO__ADMIN_DOMAIN} {
     reverse_proxy {$MINIO__ENDPOINT_SECURE}
 
