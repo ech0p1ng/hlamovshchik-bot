@@ -165,7 +165,7 @@ class MediaService:
         '''
         media = []
         found = await self.find_media(text, url_type='global', reverse=True)
-        
+
         for media_data in found:
             if media_data['type'] == 'img':
                 photo_url = media_data['url']
@@ -173,7 +173,7 @@ class MediaService:
                     continue
                 title = (media_data['text'] or '')[:64]
                 media.append(InlineQueryResultPhoto(
-                    id=hashlib.sha1(str(media_data['url']).encode()).hexdigest(),  # уникальный и стабильный id
+                    id=str(uuid.uuid4()),
                     photo_url=photo_url,
                     thumbnail_url=photo_url,
                     title=title,

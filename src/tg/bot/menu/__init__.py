@@ -215,5 +215,6 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
         await inline_query.answer(
             results=results[offset:offset + limit],  # type: ignore
             next_offset=next_offset,
-            cache_time=cache_time
+            cache_time=cache_time,
+            switch_pm_text="Открыть бота",
         )

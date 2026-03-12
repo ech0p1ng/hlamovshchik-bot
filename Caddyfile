@@ -1,11 +1,44 @@
 {$MINIO__DOMAIN} {
-    reverse_proxy {$MINIO__ENDPOINT}
+
+    encode gzip
 
     header {
-        Strict-Transport-Security "max-age=31536000"
+        Access-Control-Allow-Origin *
+        Cache-Control "public, max-age=31536000, immutable"
     }
+
+    # thumbnails
+    handle_path /t/* {
+        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+
+        reverse_proxy minio:9000 {
+            header_up Host {host}
+        }
+    }
+
+    # оригиналы
+    handle_path /i/* {
+        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+
+        reverse_proxy minio:9000 {
+            header_up Host {host}
+        }
+    }
+
+    # cache {
+    #     path /data/caddy-cache
+    #     ttl 24h
+    #     stale 12h
+    # }
+
+    header /i/*.jpg Content-Type image/jpeg
+    header /i/*.jpeg Content-Type image/jpeg
+    header /i/*.png Content-Type image/png
+    header /i/*.webp Content-Type image/webp
 }
+
 {$MINIO__ADMIN_DOMAIN} {
+
     reverse_proxy {$MINIO__ENDPOINT_SECURE}
 
     header {

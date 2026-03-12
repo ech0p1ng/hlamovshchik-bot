@@ -136,7 +136,7 @@ class MinioService:
                     full_file_name,
                     file,
                     file_size,
-                    # content_type=str(file.content_type)
+                    content_type=f"image/{file_ext.lower()}"
                 )
 
                 return AttachmentMinioSchema(
@@ -210,4 +210,18 @@ class MinioService:
         Returns:
             str: URL файла в MinIO
         '''
-        return f'https://{self.__settings.minio.domain}/{self.__settings.minio.bucket_name}/{file_name}.{file_ext}'
+        return f'https://{self.__settings.minio.domain}/i/{file_name}.{file_ext}'
+        # return f'https://{self.__settings.minio.domain}/{self.__settings.minio.bucket_name}/{file_name}.{file_ext}'
+    
+    def get_thumbnail_url(self, file_name: str, file_ext: str) -> str:
+        '''
+        Получение URL превью в MinIO
+
+        Args:
+            file_name (str): Полное имя файла
+            file_ext (str): Расширение файла
+
+        Returns:
+            str: URL файла в MinIO
+        '''
+        return f'https://{self.__settings.minio.domain}/t/{file_name}.{file_ext}'
