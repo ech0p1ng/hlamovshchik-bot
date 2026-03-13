@@ -153,12 +153,14 @@ class MediaService:
                 })
         return result
 
-    async def inline_media(self, text: str) -> list[InlineQueryResultPhoto]:
+    async def inline_media(self, text: str, offset: int, limit: int) -> list[InlineQueryResultPhoto]:
         '''
         Медиа при вводе @bot_name в поле ввода сообщения
 
         Args:
             text (str): Текст для поиска
+            offset (int): Сдвиг 
+            limit (int): Предел количества изображений за один запрос
 
         Returns:
             list[InlineQueryResultPhoto]: Найденные изображения
@@ -167,7 +169,13 @@ class MediaService:
             NotFoundError: Не удалось найти
         '''
         media = []
-        found = await self.find_media(text, url_type='global', reverse=True)
+        found = await self.find_media(
+            text,
+            url_type='global',
+            reverse=True,
+            offset=offset,
+            limit=limit
+        )
 
         for media_data in found:
             if media_data['type'] == 'img':
@@ -181,7 +189,7 @@ class MediaService:
                     photo_url=photo_url,
                     thumbnail_url=thumbnail_url,
                     title=title,
-                    description=f"Отправлено с канала @{get_settings().telegram.channel_name}"
+                    description=f"Отправлено из канала @{get_settings().telegram.channel_name}"
                 ))
         return media
 

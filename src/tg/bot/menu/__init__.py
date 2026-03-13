@@ -14,6 +14,7 @@ from aiogram.types import (
 from bot_request.schemas.schema import BotRequestCreateSchema
 from bot_request.models.model import BotRequestModel
 from dependencies import (
+    get_settings,
     get_user_service,
     get_media_service,
     get_bot_request_service
@@ -91,7 +92,7 @@ async def start(message: types.Message) -> None:
     # ######################## #
 
     await message.answer(
-        f"Привет, {user.user_name}! Я - Хламовщик, ищу картинки в Хламе по тексту в посте"
+        f"Привет, {user.user_name}! Я - Хламовщик, ищу картинки в {get_settings().telegram.channel_name} по тексту в посте"
     )
 
 
@@ -197,7 +198,11 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
         )
 
         try:
-            media_list = await media_service.inline_media(query_text)
+            media_list = await media_service.inline_media(
+                query_text,
+                offset,
+                limit
+            )
         except NotFoundError:
             await __empty_answer(cache_time)
             return
@@ -209,11 +214,11 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
         await __empty_answer(cache_time)
         return
 
-    next_offset = str(offset + limit) if len(results) > offset + limit else None
+    next_offset = str(offset + limit) if len(results) == limit else None
 
     if results:
         await inline_query.answer(
-            results=results[offset:offset + limit],  # type: ignore
+            results=results,  # type: ignore
             next_offset=next_offset,
             cache_time=cache_time,
             switch_pm_text="Открыть бота",
