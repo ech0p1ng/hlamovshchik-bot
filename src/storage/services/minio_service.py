@@ -5,6 +5,7 @@ import uuid
 import json
 import asyncio
 import mimetypes
+from PIL import Image
 from minio import Minio
 from minio.error import S3Error
 from urllib3 import PoolManager, disable_warnings
@@ -93,6 +94,19 @@ class MinioService:
         except S3Error as e:
             raise e
 
+    def __get_image_size(self, bytes: BytesIO) -> tuple[int, int]:
+        '''
+        Получить размер изображения.
+        
+        Args:
+            bytes (BytesIO): Байты.
+        
+        Returns:
+            tuple[int, int]: Ширина и высота.
+        '''
+        img = Image.open(bytes)
+        return img.size
+
     async def upload_file(
         self,
         file: BytesIO,
@@ -135,6 +149,12 @@ class MinioService:
                 # fallback на octet-stream, если неизвестно
                 mime_type = "application/octet-stream"
 
+            width = 0
+            height = 0
+
+            if 'image' in mime_type:
+                width, height = self.__get_image_size(file)
+            
             await asyncio.to_thread(
                 self.client.put_object,
                 self.bucket_name,
@@ -147,7 +167,9 @@ class MinioService:
             return AttachmentMinioSchema(
                 file_name=safe_name,
                 file_extension=file_ext,
-                file_size=file_size
+                file_size=file_size,
+                width=width,
+                height=height
             )
 
         except S3Error as exc:

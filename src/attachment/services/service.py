@@ -1,13 +1,12 @@
 from io import BytesIO
-from minio import S3Error
 from sqlalchemy.ext.asyncio import AsyncSession
+from PIL import Image
 
 from async_requests import download_file
 from base.service import BaseService
 from attachment.models.model import AttachmentModel
-from attachment.schemas.schema import AttachmentSchema
 from attachment.repositories.repository import AttachmentRepository
-from exceptions.exception import FileIsTooLargeError, WasNotCreatedError, AlreadyExistsError
+from exceptions.exception import AlreadyExistsError
 from storage.services.minio_service import MinioService
 
 
@@ -53,9 +52,10 @@ class AttachmentService(BaseService[AttachmentModel]):
         models = []
         for message_id, file_url in tg_msg_data:
             response = await download_file(file_url)
+            file = response['file']
             try:
                 minio_schema = await self.minio_service.upload_file(
-                    file=response['file'],
+                    file=file,
                     file_ext=response['ext']
                 )
             except Exception as exc:
