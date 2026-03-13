@@ -32,6 +32,8 @@ class AttachmentModel(BaseModel):
     file_name: Mapped[str] = mapped_column()
     file_extension: Mapped[str] = mapped_column()
     file_size: Mapped[int] = mapped_column()
+    width: Mapped[int] = mapped_column()
+    height: Mapped[int] = mapped_column()
 
     message: Mapped['MessageModel'] = relationship(
         'MessageModel',
@@ -46,12 +48,16 @@ class AttachmentModel(BaseModel):
             self_stats = (
                 self.file_name,
                 self.file_extension,
-                self.file_size
+                self.file_size,
+                self.width,
+                self.height,
             )
             value_stats = (
                 value.file_name,
                 value.file_extension,
-                value.file_size
+                value.file_size,
+                value.width,
+                value.height,
             )
             return self_stats == value_stats
         else:
@@ -62,7 +68,9 @@ class AttachmentModel(BaseModel):
         cls,
         schema: AttachmentSimpleSchema | AttachmentSchema | AttachmentMinioSchema,
         tg_msg_id: int | None = None,
-        tg_file_url: str | None = None
+        tg_file_url: str | None = None,
+        width: int = 0,
+        height: int = 0,
     ) -> 'AttachmentModel':
         '''
         Получение модели из Pydantic-схем
@@ -71,6 +79,8 @@ class AttachmentModel(BaseModel):
             schema (AttachmentSimpleSchema | AttachmentSchema | AttachmentMinioSchema): Pydantic-схема
             tg_msg_id (str | None, optional): ID сообщения в Telegram. По-умолчанию: `None`.
             tg_file_url (str | None, optional): URL сообщения в Telegram. По-умолчанию: `None`.
+            width (int, optional): Ширина медиа файла (если поддерживается). По-умолчанию: `0`.
+            height (int, optional): Высота медиа файла (если поддерживается). По-умолчанию: `0`.
 
         Returns:
             AttachmentModel: SQL Alchemy модель медиафайла
@@ -81,6 +91,8 @@ class AttachmentModel(BaseModel):
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
                 file_size=schema.file_size,
+                width=width,
+                height=height,
             )
         elif type(schema) is AttachmentMinioSchema:
             return cls(
@@ -90,10 +102,14 @@ class AttachmentModel(BaseModel):
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
                 file_size=schema.file_size,
+                width=width,
+                height=height,
             )
         else:
             return cls(
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
-                file_size=schema.file_size
+                file_size=schema.file_size,
+                width=width,
+                height=height,
             )
