@@ -10,10 +10,14 @@ class AttachmentSimpleSchema(BaseSimpleSchema):
         file_name (str): Имя файла
         file_extension (str): Расширение файла
         file_size (int): Размер файла (байт)
+        width (int): Ширина медиа файла
+        height (int): Высота медиа файла
     '''
     file_name: str
     file_extension: str
     file_size: int
+    width: int
+    height: int
 
 
 class AttachmentMinioSchema(AttachmentSimpleSchema):
@@ -26,6 +30,8 @@ class AttachmentMinioSchema(AttachmentSimpleSchema):
         file_name (str): Имя файла
         file_extension (str): Расширение файла
         file_size (int): Размер файла (байт)
+        width (int): Ширина медиа файла
+        height (int): Высота медиа файла
     '''
 
     # minio_file_url: str | None
@@ -42,6 +48,8 @@ class AttachmentSchema(AttachmentMinioSchema):
         file_name (str): Имя файла
         file_extension (str): Расширение файла
         file_size (int): Размер файла (байт)
+        width (int): Ширина медиа файла
+        height (int): Высота медиа файла
     '''
 
     tg_msg_id: int
