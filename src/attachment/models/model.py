@@ -32,8 +32,8 @@ class AttachmentModel(BaseModel):
     file_name: Mapped[str] = mapped_column()
     file_extension: Mapped[str] = mapped_column()
     file_size: Mapped[int] = mapped_column()
-    width: Mapped[int] = mapped_column()
-    height: Mapped[int] = mapped_column()
+    width: Mapped[int] = mapped_column(nullable=True)
+    height: Mapped[int] = mapped_column(nullable=True)
 
     message: Mapped['MessageModel'] = relationship(
         'MessageModel',
