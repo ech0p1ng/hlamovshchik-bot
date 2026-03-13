@@ -181,9 +181,10 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
 
     results = []
     cache_time = 1
-    # if not query_text or len(query_text) <= 1:
-    #     await __empty_answer(cache_time)
-    #     return
+    
+    if not query_text or len(query_text) <= 1:
+        await __empty_answer(cache_time)
+        return
 
     async for db in get_db():
         media_service = await get_media_service(db)
@@ -213,6 +214,7 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
     if not results:
         await __empty_answer(cache_time)
         return
+    
     results = results[offset : offset+limit]
     next_offset = str(offset + limit) if len(results) == limit else None
 
