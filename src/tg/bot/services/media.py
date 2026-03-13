@@ -94,6 +94,7 @@ class MediaService:
         ```
         {
             "url": media_url, [str]
+            "thumbnail_url": thumbnail_url, [str]
             "text": message_text, [str]
             "type": "vid" | "img" | None, [str|None]
             "name": file_name, [str]
@@ -128,6 +129,7 @@ class MediaService:
                 media_data.append(
                     {
                         'url': get_url_func(a.file_name, a.file_extension),
+                        'thumbnail_url': self.minio_service.get_thumbnail_url(a.file_name, a.file_extension),
                         'name': a.file_name,
                         'ext': a.file_extension
                     }
@@ -144,18 +146,21 @@ class MediaService:
                 result.append({
                     'text': msg.text,
                     'url': data['url'],
+                    'thumbnail_url': data['thumbnail_url'],
                     'type': file_type,
                     'name': data['name'],
                     'ext': data['ext'],
                 })
         return result
 
-    async def inline_media(self, text: str) -> list[InlineQueryResultPhoto]:
+    async def inline_media(self, text: str, offset: int, limit: int) -> list[InlineQueryResultPhoto]:
         '''
         Медиа при вводе @bot_name в поле ввода сообщения
 
         Args:
             text (str): Текст для поиска
+            offset (int): Сдвиг 
+            limit (int): Предел количества изображений за один запрос
 
         Returns:
             list[InlineQueryResultPhoto]: Найденные изображения
@@ -164,20 +169,29 @@ class MediaService:
             NotFoundError: Не удалось найти
         '''
         media = []
-        found = await self.find_media(text, url_type='global', reverse=True)
-        
+        found = await self.find_media(
+            text,
+            url_type='global',
+            reverse=True,
+            offset=offset,
+            limit=limit
+        )
+
         for media_data in found:
             if media_data['type'] == 'img':
                 photo_url = media_data['url']
-                if not photo_url:
+                thumbnail_url = media_data['thumbnail_url']
+                if not photo_url or not thumbnail_url:
                     continue
                 title = (media_data['text'] or '')[:64]
                 media.append(InlineQueryResultPhoto(
-                    id=hashlib.sha1(str(media_data['url']).encode()).hexdigest(),  # уникальный и стабильный id
+                    id=str(uuid.uuid4()),
                     photo_url=photo_url,
-                    thumbnail_url=photo_url,
+                    thumbnail_url=thumbnail_url,
                     title=title,
-                    description=f"Отправлено с канала @{get_settings().telegram.channel_name}"
+                    description=f"Отправлено из канала @{get_settings().telegram.channel_name}",
+                    photo_width=512,
+                    photo_height=512
                 ))
         return media
 
