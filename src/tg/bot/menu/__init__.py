@@ -180,9 +180,9 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
 
     results = []
     cache_time = 1
-    if not query_text or len(query_text) <= 1:
-        await __empty_answer(cache_time)
-        return
+    # if not query_text or len(query_text) <= 1:
+    #     await __empty_answer(cache_time)
+    #     return
 
     async for db in get_db():
         media_service = await get_media_service(db)
