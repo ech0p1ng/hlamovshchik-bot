@@ -189,7 +189,9 @@ class MediaService:
                     photo_url=photo_url,
                     thumbnail_url=thumbnail_url,
                     title=title,
-                    description=f"Отправлено из канала @{get_settings().telegram.channel_name}"
+                    description=f"Отправлено из канала @{get_settings().telegram.channel_name}",
+                    photo_width=512,
+                    photo_height=512
                 ))
         return media
 
