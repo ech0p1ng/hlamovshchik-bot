@@ -213,7 +213,7 @@ async def inline_msg(inline_query: types.InlineQuery) -> None:
     if not results:
         await __empty_answer(cache_time)
         return
-
+    results = results[offset : offset+limit]
     next_offset = str(offset + limit) if len(results) == limit else None
 
     if results:
