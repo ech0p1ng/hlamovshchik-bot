@@ -170,6 +170,13 @@ class MessageService(BaseService[MessageModel]):
         last_id = last_msg['id'] + len(last_msg['image_urls']) - 1
         return last_id
 
+    async def __get_first_msg_id(self) -> int:
+        parsed = await self.__parse_messages(after=1)
+        if parsed is None:
+            raise Exception('Не удалось спарсить сообщения')
+        first_msg = parsed[0]
+        return first_msg['id']
+
     async def __get_last_parsed_msg_id(self) -> int:
         value = await self.global_var_service.get_value('last_parsed_msg_id') or 1
         return int(value)
@@ -201,13 +208,16 @@ class MessageService(BaseService[MessageModel]):
         ```
         '''
         self.logger.info('Обновление займет продолжительное время...')
-        
+
         if not first_msg_id:
-            first_msg_id = await self.__get_last_parsed_msg_id()
-        
+            first_msg_id = int(max(
+                await self.__get_last_parsed_msg_id(),
+                await self.__get_first_msg_id()
+            ))
+
         if not last_msg_id:
             last_msg_id = await self.__get_last_msg_id()
-            
+
         current_msg_id = first_msg_id
         while current_msg_id < last_msg_id:
             last_msg_id = await self.__get_last_msg_id()
@@ -251,7 +261,8 @@ class MessageService(BaseService[MessageModel]):
                 }
             else:
                 current_msg_id += 1
-            await asyncio.sleep(random.randint(2, 5))
+            sleep_time = random.randint(5, 10)
+            await asyncio.sleep(sleep_time)
 
     async def parse_all(self) -> AsyncGenerator[dict[str, Any]]:
         '''
