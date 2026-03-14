@@ -252,8 +252,8 @@ class MessageService(BaseService[MessageModel]):
 
                 yield {
                     'current': current_messages_id,
-                    'first': int(models[0].id),
-                    'last': int(models[-1].id),
+                    'first': int(models[0].tg_msg_id),
+                    'last': int(models[-1].tg_msg_id),
                     'messages': models,
                     'skipped': skipped_messages_id,
                     'total': total,
