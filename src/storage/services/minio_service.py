@@ -104,8 +104,14 @@ class MinioService:
         Returns:
             tuple[int, int]: Ширина и высота.
         '''
+        pos = bytes.tell()
+        bytes.seek(0)
+
         img = Image.open(bytes)
-        return img.size
+        width, height = img.size
+
+        bytes.seek(pos)
+        return width, height
 
     async def upload_file(
         self,
