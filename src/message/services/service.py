@@ -77,9 +77,13 @@ class MessageService(BaseService[MessageModel]):
         else:
             model = await super().create(model)
         if files_info:
-            attachments = await self.attachment_service.upload_files(*files_info)
-            model.attachments = attachments or []
-            await super().update(model, filter)
+            try:
+                attachments = await self.attachment_service.upload_files(*files_info)
+            except Exception as e:
+                raise e
+            else:
+                model.attachments = attachments or []
+                await super().update(model, filter)
 
         return model
 
@@ -229,9 +233,10 @@ class MessageService(BaseService[MessageModel]):
                         models.append(model)
                         current_messages_id.append(first_media_id)
                         current_msg_id += len(files)
-                    except Exception:
+                    except Exception as e:
                         current_msg_id = first_media_id + 1
                         skipped_messages_id.update([first_media_id])
+                        print(e)
 
                 await self.__set_last_parsed_msg_id(current_msg_id)
                 total = len(models)
