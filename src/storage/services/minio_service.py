@@ -161,7 +161,7 @@ class MinioService:
                 full_file_name,
                 file,
                 file_size,
-                content_type=mime_type
+                # content_type=mime_type
             )
 
             return AttachmentMinioSchema(
