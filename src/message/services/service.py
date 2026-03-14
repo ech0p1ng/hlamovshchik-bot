@@ -209,10 +209,13 @@ class MessageService(BaseService[MessageModel]):
         '''
         self.logger.info('Обновление займет продолжительное время...')
 
+        
         if not first_msg_id:
             last_parsed = await self.__get_last_parsed_msg_id()
             first = await self.__get_first_msg_id()
             first_msg_id = int(max(last_parsed, first))
+
+        _first_msg_id = first_msg_id
 
         if not last_msg_id:
             last_msg_id = await self.__get_last_msg_id()
@@ -252,8 +255,8 @@ class MessageService(BaseService[MessageModel]):
 
                 yield {
                     'current': current_messages_id,
-                    'first': int(models[0].tg_msg_id),
-                    'last': int(models[-1].tg_msg_id),
+                    'first': int(_first_msg_id),
+                    'last': int(last_msg_id),
                     'messages': models,
                     'skipped': skipped_messages_id,
                     'total': total,
