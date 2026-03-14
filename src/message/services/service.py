@@ -173,13 +173,13 @@ class MessageService(BaseService[MessageModel]):
     async def __set_last_parsed_msg_id(self, value: int) -> None:
         await self.global_var_service.set_value('last_parsed_msg_id', str(value))
 
-    async def parse(self, first_msg_id: int, last_msg_id: int) -> AsyncGenerator[dict[str, Any]]:
+    async def parse(self, first_msg_id: int | None, last_msg_id: int | None) -> AsyncGenerator[dict[str, Any]]:
         '''
         Парсинг сообщений из канала
 
         Args:
-            first_msg_id (int): ID первого сообщения в очереди на парсинг
-            last_msg_id (int): ID последнего сообщения в очереди на парсинг
+            first_msg_id (int | None): ID первого сообщения в очереди на парсинг. Если `None` - id последнего спаршенного сообщения
+            last_msg_id (int | None): ID последнего сообщения в очереди на парсинг.  Если `None` - id последнего сообщения
         Raises:
             Exception: Не удалось спарсить сообщения
 
@@ -197,8 +197,16 @@ class MessageService(BaseService[MessageModel]):
         ```
         '''
         self.logger.info('Обновление займет продолжительное время...')
+        
+        if not first_msg_id:
+            first_msg_id = await self.__get_last_parsed_msg_id()
+        
+        if not last_msg_id:
+            last_msg_id = await self.__get_last_msg_id()
+            
         current_msg_id = first_msg_id
         while current_msg_id < last_msg_id:
+            last_msg_id = await self.__get_last_msg_id()
             parsed = await self.__parse_messages(after=current_msg_id)
             models = []
             skipped_messages_id: set[int] = set()
@@ -287,9 +295,7 @@ class MessageService(BaseService[MessageModel]):
         ```
         '''
         self.logger.info('Обновление займет продолжительное время...')
-        last_msg_id = await self.__get_last_msg_id()
-        first_msg_id = await self.__get_last_parsed_msg_id()
-        async for msg_batch in self.parse(first_msg_id, last_msg_id):
+        async for msg_batch in self.parse(None, None):
             yield msg_batch
 
     async def find_with_value(
