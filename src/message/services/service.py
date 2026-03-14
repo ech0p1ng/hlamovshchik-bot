@@ -174,7 +174,7 @@ class MessageService(BaseService[MessageModel]):
         parsed = await self.__parse_messages(after=1)
         if parsed is None:
             raise Exception('Не удалось спарсить сообщения')
-        first_msg = parsed[-1]
+        first_msg = parsed[0]
         return first_msg['id']
 
     async def __get_last_parsed_msg_id(self) -> int:
@@ -210,10 +210,9 @@ class MessageService(BaseService[MessageModel]):
         self.logger.info('Обновление займет продолжительное время...')
 
         if not first_msg_id:
-            first_msg_id = int(max(
-                await self.__get_last_parsed_msg_id(),
-                await self.__get_first_msg_id()
-            ))
+            last_parsed = await self.__get_last_parsed_msg_id()
+            first = await self.__get_first_msg_id()
+            first_msg_id = int(max(last_parsed,first))
 
         if not last_msg_id:
             last_msg_id = await self.__get_last_msg_id()
