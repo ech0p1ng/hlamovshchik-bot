@@ -174,7 +174,7 @@ class MessageService(BaseService[MessageModel]):
         parsed = await self.__parse_messages(after=1)
         if parsed is None:
             raise Exception('Не удалось спарсить сообщения')
-        first_msg = parsed[0]
+        first_msg = parsed[-1]
         return first_msg['id']
 
     async def __get_last_parsed_msg_id(self) -> int:
