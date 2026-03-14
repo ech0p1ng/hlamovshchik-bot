@@ -209,7 +209,6 @@ class MessageService(BaseService[MessageModel]):
         '''
         self.logger.info('Обновление займет продолжительное время...')
 
-        
         if not first_msg_id:
             last_parsed = await self.__get_last_parsed_msg_id()
             first = await self.__get_first_msg_id()
@@ -344,3 +343,22 @@ class MessageService(BaseService[MessageModel]):
             order_by=order_by,
             model_attrs=model_attrs,
         )
+
+    async def parse_by_id(self, msg_id: int) -> dict[str, Any] | None:
+        base_url = f'https://t.me/{self.__settings.telegram.channel_name}/{msg_id}#'
+
+        url = base_url
+
+        try:
+            response = await async_requests.get(url)
+        except Exception as e:
+            raise e
+        else:
+            soup = bs(response.text, 'html.parser')
+            messages = soup.select('.tgme_widget_message_wrap.js-widget_message_wrap')
+            for i, m in enumerate(messages):
+                if i > self.__parsed_messages_at_once:
+                    break
+                data = await self.__parse_data(m)
+                if data and data['text'] != '':
+                    return data
