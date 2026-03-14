@@ -212,7 +212,7 @@ class MessageService(BaseService[MessageModel]):
         if not first_msg_id:
             last_parsed = await self.__get_last_parsed_msg_id()
             first = await self.__get_first_msg_id()
-            first_msg_id = int(max(last_parsed,first))
+            first_msg_id = int(max(last_parsed, first))
 
         if not last_msg_id:
             last_msg_id = await self.__get_last_msg_id()
@@ -220,8 +220,8 @@ class MessageService(BaseService[MessageModel]):
         current_msg_id = first_msg_id
         while current_msg_id < last_msg_id:
             last_msg_id = await self.__get_last_msg_id()
-            parsed = await self.__parse_messages(after=current_msg_id-1)
-            models = []
+            parsed = await self.__parse_messages(after=current_msg_id - 1)
+            models: list[MessageModel] = []
             skipped_messages_id: set[int] = set()
 
             if parsed:
@@ -252,8 +252,8 @@ class MessageService(BaseService[MessageModel]):
 
                 yield {
                     'current': current_messages_id,
-                    'first': int(current_msg_id),
-                    'last': int(last_msg_id),
+                    'first': int(models[0].id),
+                    'last': int(models[-1].id),
                     'messages': models,
                     'skipped': skipped_messages_id,
                     'total': total,
