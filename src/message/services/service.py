@@ -220,7 +220,7 @@ class MessageService(BaseService[MessageModel]):
         current_msg_id = first_msg_id
         while current_msg_id < last_msg_id:
             last_msg_id = await self.__get_last_msg_id()
-            parsed = await self.__parse_messages(after=current_msg_id)
+            parsed = await self.__parse_messages(after=current_msg_id-1)
             models = []
             skipped_messages_id: set[int] = set()
 
