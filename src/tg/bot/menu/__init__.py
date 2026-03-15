@@ -92,7 +92,7 @@ async def start(message: types.Message) -> None:
     # ######################## #
 
     await message.answer(
-        f"Привет, {user.user_name}! Я - Хламовщик, ищу картинки в {get_settings().telegram.channel_name} по тексту в посте"
+        f"Привет, {user.user_name}! Я - бот, который, ищет картинки в @{get_settings().telegram.channel_name} по тексту в посте"
     )
 
 

@@ -69,8 +69,6 @@ class AttachmentModel(BaseModel):
         schema: AttachmentSimpleSchema | AttachmentSchema | AttachmentMinioSchema,
         tg_msg_id: int | None = None,
         tg_file_url: str | None = None,
-        width: int = 0,
-        height: int = 0,
     ) -> 'AttachmentModel':
         '''
         Получение модели из Pydantic-схем
@@ -79,37 +77,33 @@ class AttachmentModel(BaseModel):
             schema (AttachmentSimpleSchema | AttachmentSchema | AttachmentMinioSchema): Pydantic-схема
             tg_msg_id (str | None, optional): ID сообщения в Telegram. По-умолчанию: `None`.
             tg_file_url (str | None, optional): URL сообщения в Telegram. По-умолчанию: `None`.
-            width (int, optional): Ширина медиа файла (если поддерживается). По-умолчанию: `0`.
-            height (int, optional): Высота медиа файла (если поддерживается). По-умолчанию: `0`.
 
         Returns:
             AttachmentModel: SQL Alchemy модель медиафайла
         '''
         if type(schema) is AttachmentSchema:
             return cls(
-                # minio_file_url=schema.minio_file_url,
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
                 file_size=schema.file_size,
-                width=width,
-                height=height,
+                width=schema.width,
+                height=schema.height,
             )
         elif type(schema) is AttachmentMinioSchema:
             return cls(
                 tg_msg_id=tg_msg_id,
                 tg_file_url=tg_file_url,
-                # minio_file_url=schema.minio_file_url,
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
                 file_size=schema.file_size,
-                width=width,
-                height=height,
+                width=schema.width,
+                height=schema.height,
             )
         else:
             return cls(
                 file_name=schema.file_name,
                 file_extension=schema.file_extension,
                 file_size=schema.file_size,
-                width=width,
-                height=height,
+                width=schema.width,
+                height=schema.height,
             )

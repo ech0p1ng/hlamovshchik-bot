@@ -77,9 +77,13 @@ class MessageService(BaseService[MessageModel]):
         else:
             model = await super().create(model)
         if files_info:
-            attachments = await self.attachment_service.upload_files(*files_info)
-            model.attachments = attachments or []
-            await super().update(model, filter)
+            try:
+                attachments = await self.attachment_service.upload_files(*files_info)
+            except Exception as e:
+                raise e
+            else:
+                model.attachments = attachments or []
+                await super().update(model, filter)
 
         return model
 
@@ -166,6 +170,13 @@ class MessageService(BaseService[MessageModel]):
         last_id = last_msg['id'] + len(last_msg['image_urls']) - 1
         return last_id
 
+    async def __get_first_msg_id(self) -> int:
+        parsed = await self.__parse_messages(after=1)
+        if parsed is None:
+            raise Exception('Не удалось спарсить сообщения')
+        first_msg = parsed[0]
+        return first_msg['id']
+
     async def __get_last_parsed_msg_id(self) -> int:
         value = await self.global_var_service.get_value('last_parsed_msg_id') or 1
         return int(value)
@@ -173,13 +184,13 @@ class MessageService(BaseService[MessageModel]):
     async def __set_last_parsed_msg_id(self, value: int) -> None:
         await self.global_var_service.set_value('last_parsed_msg_id', str(value))
 
-    async def parse(self, first_msg_id: int, last_msg_id: int) -> AsyncGenerator[dict[str, Any]]:
+    async def parse(self, first_msg_id: int | None, last_msg_id: int | None) -> AsyncGenerator[dict[str, Any]]:
         '''
         Парсинг сообщений из канала
 
         Args:
-            first_msg_id (int): ID первого сообщения в очереди на парсинг
-            last_msg_id (int): ID последнего сообщения в очереди на парсинг
+            first_msg_id (int | None): ID первого сообщения в очереди на парсинг. Если `None` - id последнего спаршенного сообщения
+            last_msg_id (int | None): ID последнего сообщения в очереди на парсинг.  Если `None` - id последнего сообщения
         Raises:
             Exception: Не удалось спарсить сообщения
 
@@ -197,10 +208,22 @@ class MessageService(BaseService[MessageModel]):
         ```
         '''
         self.logger.info('Обновление займет продолжительное время...')
+
+        if not first_msg_id:
+            last_parsed = await self.__get_last_parsed_msg_id()
+            first = await self.__get_first_msg_id()
+            first_msg_id = int(max(last_parsed, first))
+
+        _first_msg_id = first_msg_id
+
+        if not last_msg_id:
+            last_msg_id = await self.__get_last_msg_id()
+
         current_msg_id = first_msg_id
         while current_msg_id < last_msg_id:
-            parsed = await self.__parse_messages(after=current_msg_id)
-            models = []
+            last_msg_id = await self.__get_last_msg_id()
+            parsed = await self.__parse_messages(after=current_msg_id - 1)
+            models: list[MessageModel] = []
             skipped_messages_id: set[int] = set()
 
             if parsed:
@@ -221,16 +244,17 @@ class MessageService(BaseService[MessageModel]):
                         models.append(model)
                         current_messages_id.append(first_media_id)
                         current_msg_id += len(files)
-                    except Exception:
+                    except Exception as e:
                         current_msg_id = first_media_id + 1
                         skipped_messages_id.update([first_media_id])
+                        print(e)
 
                 await self.__set_last_parsed_msg_id(current_msg_id)
                 total = len(models)
 
                 yield {
                     'current': current_messages_id,
-                    'first': int(current_msg_id),
+                    'first': int(_first_msg_id),
                     'last': int(last_msg_id),
                     'messages': models,
                     'skipped': skipped_messages_id,
@@ -238,7 +262,8 @@ class MessageService(BaseService[MessageModel]):
                 }
             else:
                 current_msg_id += 1
-            await asyncio.sleep(random.randint(2, 5))
+            sleep_time = random.randint(5, 10)
+            await asyncio.sleep(sleep_time)
 
     async def parse_all(self) -> AsyncGenerator[dict[str, Any]]:
         '''
@@ -287,9 +312,7 @@ class MessageService(BaseService[MessageModel]):
         ```
         '''
         self.logger.info('Обновление займет продолжительное время...')
-        last_msg_id = await self.__get_last_msg_id()
-        first_msg_id = await self.__get_last_parsed_msg_id()
-        async for msg_batch in self.parse(first_msg_id, last_msg_id):
+        async for msg_batch in self.parse(None, None):
             yield msg_batch
 
     async def find_with_value(
@@ -320,3 +343,22 @@ class MessageService(BaseService[MessageModel]):
             order_by=order_by,
             model_attrs=model_attrs,
         )
+
+    async def parse_by_id(self, msg_id: int) -> dict[str, Any] | None:
+        base_url = f'https://t.me/{self.__settings.telegram.channel_name}/{msg_id}#'
+
+        url = base_url
+
+        try:
+            response = await async_requests.get(url)
+        except Exception as e:
+            raise e
+        else:
+            soup = bs(response.text, 'html.parser')
+            messages = soup.select('.tgme_widget_message_wrap.js-widget_message_wrap')
+            for i, m in enumerate(messages):
+                if i > self.__parsed_messages_at_once:
+                    break
+                data = await self.__parse_data(m)
+                if data and data['text'] != '':
+                    return data
