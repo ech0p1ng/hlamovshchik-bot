@@ -288,13 +288,15 @@ class BaseService[M]:
                 если `raise_exc = True`, в противном случае не выбрасывается
         '''
 
-        try:
-            found_model = await self.get(filter)
-            return bool(found_model)
-        except NotFoundError as e:
-            if raise_exc:
-                raise e
-            return False
+        statement = select(self.model_class).filter_by(**filter)
+        result = await self.repository.db.execute(statement.exists().select())
+        exists = bool(result.scalar())
+        
+        if not exists and raise_exc:
+            raise self._not_found_by_filter_error(filter)
+    
+        return exists
+
 
     def _not_found_error_for_list(self) -> NotFoundError:
         '''
