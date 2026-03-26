@@ -32,42 +32,6 @@ class BotRequestService(BaseService[BotRequestModel]):
         self.db = db
         self.logger = logging.getLogger('tg_logger')
 
-    async def create(
-        self,
-        model: BotRequestModel,
-    ) -> BotRequestModel:
-        '''
-        Создать сообщение
-
-        Args:
-            model (BotRequestModel): SQL Alchemy модель запроса боту
-
-        Returns:
-            BotRequestModel: SQLAlchemy-модель запроса боту
-
-        Raises:
-            WasNotCreatedError: Не удалось создать сообщение
-        '''
-        # model.attachments = []
-        filter = {
-            'user_id': model.user_id,
-            'text': model.text,
-            
-        }
-        if await self.exists(filter, raise_exc=False):
-            existing = await self.get(filter)
-            existing.text = model.text
-            existing.user_id = model.user_id
-            model = await super().update(existing, filter)
-        else:
-            model = await super().create(model)
-        # if files_info:
-        #     attachments = await self.attachment_service.upload_files(*files_info)
-        #     model.attachments = attachments or []
-        #     await super().update(model, filter)
-
-        return model
-
     async def find_with_value(
         self,
         filter: dict[str, Any],
