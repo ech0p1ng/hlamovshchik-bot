@@ -19,9 +19,9 @@
     # Thumbnails
     handle_path /t/* {
         rewrite * /{$MINIO__BUCKET_NAME}{uri}
-        reverse_proxy minio:{$MINIO__PORT} {
+        reverse_proxy {$MINIO__ENDPOINT} {
             # Пробрасываем правильный Host
-            header_up Host minio:{$MINIO__PORT}
+            header_up Host {$MINIO__ENDPOINT}
             # Отключаем buffering для MinIO
             flush_interval -1
         }
@@ -30,16 +30,16 @@
     # Originals
     handle_path /i/* {
         rewrite * /{$MINIO__BUCKET_NAME}{uri}
-        reverse_proxy minio:{$MINIO__PORT} {
-            header_up Host minio:{$MINIO__PORT}
+        reverse_proxy {$MINIO__ENDPOINT} {
+            header_up Host {$MINIO__ENDPOINT}
             flush_interval -1
         }
     }
 }
 
 {$MINIO__ADMIN_DOMAIN} {
-    reverse_proxy minio:{$MINIO__CONSOLE_PORT} {
-        header_up Host minio:{$MINIO__CONSOLE_PORT}
+    reverse_proxy {$MINIO__ENDPOINT_SECURE} {
+        header_up Host {$MINIO__ENDPOINT_SECURE}
         # Для консоли важны WebSocket
         header_up Upgrade {http.request.header.Upgrade}
         header_up Connection {http.request.header.Connection}
