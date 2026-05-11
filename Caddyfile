@@ -1,21 +1,24 @@
 {$MINIO__DOMAIN} {
-
     encode gzip
 
     # =========================
     # ORIGINAL IMAGES (/i/)
     # =========================
     handle /i/* {
-        rewrite * /private-bucket{uri}
-        reverse_proxy {$MINIO__ENDPOINT}
+        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+        reverse_proxy http://{$MINIO__ENDPOINT} {
+            header_up Host {http.reverse_proxy.upstream.host}
+        }
     }
 
     # =========================
     # THUMBNAILS (/t/)
     # =========================
     handle /t/* {
-        rewrite * /private-bucket{uri}
-        reverse_proxy {$MINIO__ENDPOINT}
+        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+        reverse_proxy http://{$MINIO__ENDPOINT} {
+            header_up Host {http.reverse_proxy.upstream.host}
+        }
     }
 
     header {
@@ -26,5 +29,7 @@
 }
 
 {$MINIO__ADMIN_DOMAIN} {
-    reverse_proxy {$MINIO__ENDPOINT_SECURE}
+    reverse_proxy http://{$MINIO__ENDPOINT_SECURE} {
+        header_up Host {http.reverse_proxy.upstream.host}
+    }
 }
