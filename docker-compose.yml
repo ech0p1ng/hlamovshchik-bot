@@ -81,10 +81,10 @@ services:
     volumes:
       - ./data/minio:/data
     environment:
-      # MINIO_ROOT_USER: ${MINIO__ROOT_USER}
-      # MINIO_ROOT_PASSWORD: ${MINIO__ROOT_PASSWORD}
-      MINIO_ACCESS_KEY: ${MINIO__ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO__SECRET_KEY}
+      MINIO_ROOT_USER: ${MINIO__ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO__ROOT_PASSWORD}
+      # MINIO_ACCESS_KEY: ${MINIO__ACCESS_KEY}
+      # MINIO_SECRET_KEY: ${MINIO__SECRET_KEY}
 
   # сервисы для получения и обновления сертификатов
   caddy:

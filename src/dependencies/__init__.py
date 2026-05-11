@@ -21,8 +21,8 @@ def get_minio_service():
     return MinioService(
         minio_settings.bucket_name,
         minio_settings.endpoint,
-        minio_settings.access_key,
-        minio_settings.secret_key
+        minio_settings.root_user,
+        minio_settings.root_password
     )
 
 
