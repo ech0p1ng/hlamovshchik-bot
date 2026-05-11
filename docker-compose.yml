@@ -73,9 +73,6 @@ services:
     expose:
       - "${MINIO__PORT}"
       - "${MINIO__PORT_SECURE}"
-    ports:
-      - "${MINIO__PORT}:${MINIO__PORT}"
-      - "${MINIO__PORT_SECURE}:${MINIO__PORT_SECURE}"
     env_file:
       - .env
     volumes:
