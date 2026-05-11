@@ -21,6 +21,7 @@ class MinioSettings(BaseSettings):
     ip: str
     domain: str
     admin_domain: str
+    version: str
 
 
 class PostgresSettings(BaseSettings):
