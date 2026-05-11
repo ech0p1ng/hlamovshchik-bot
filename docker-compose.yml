@@ -91,7 +91,7 @@ services:
     image: caddy
     ports:
       - "80:80"
-      - "44443:443"
+      - "443:443"
     env_file:
       - .env
     volumes:
