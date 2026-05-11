@@ -2,20 +2,22 @@
     encode gzip
 
     # =========================
-    # ORIGINAL IMAGES (/i/)
+    # ORIGINAL IMAGES (/i/*)
+    # Преобразует: /i/photo.jpg → /private-bucket/photo.jpg
     # =========================
     handle /i/* {
-        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+        rewrite * /private-bucket{path}
         reverse_proxy http://{$MINIO__ENDPOINT} {
             header_up Host {http.reverse_proxy.upstream.host}
         }
     }
 
     # =========================
-    # THUMBNAILS (/t/)
+    # THUMBNAILS (/t/*)
+    # Преобразует: /t/photo.jpg → /private-bucket/photo.jpg  
     # =========================
     handle /t/* {
-        rewrite * /{$MINIO__BUCKET_NAME}{uri}
+        rewrite * /private-bucket{path}
         reverse_proxy http://{$MINIO__ENDPOINT} {
             header_up Host {http.reverse_proxy.upstream.host}
         }
@@ -25,11 +27,5 @@
         Access-Control-Allow-Origin *
         Cache-Control "public, max-age=31536000, immutable"
         X-Content-Type-Options nosniff
-    }
-}
-
-{$MINIO__ADMIN_DOMAIN} {
-    reverse_proxy http://{$MINIO__ENDPOINT_SECURE} {
-        header_up Host {http.reverse_proxy.upstream.host}
     }
 }
