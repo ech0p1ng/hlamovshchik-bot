@@ -6,7 +6,7 @@
         rewrite * /private-bucket{path}
         reverse_proxy http://{$MINIO__ENDPOINT} {
             # Убираем лишние заголовки
-            header_up Host {http.request.host}
+            header_up Host {$MINIO__DOMAIN}:{$MINIO__PORT}
             # Не добавляем Authorization
         }
     }
@@ -14,7 +14,7 @@
     handle /t/* {
         rewrite * /private-bucket{path}
         reverse_proxy http://{$MINIO__ENDPOINT} {
-            header_up Host {http.request.host}
+            header_up Host {$MINIO__DOMAIN}:{$MINIO__PORT}
         }
     }
 
