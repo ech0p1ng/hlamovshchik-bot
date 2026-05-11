@@ -20,8 +20,8 @@ class MinioService:
         self,
         bucket_name: str,
         endpoint: str,
-        access_key: str | None = None,
-        secret_key: str | None = None,
+        root_user: str | None = None,
+        root_password: str | None = None,
     ) -> None:
         context = ssl.create_default_context()
         context.options |= ssl.OP_NO_SSLv3 | ssl.OP_NO_SSLv2
@@ -30,8 +30,8 @@ class MinioService:
 
         self._client = Minio(
             endpoint,
-            access_key=access_key,
-            secret_key=secret_key,
+            access_key=root_user,
+            secret_key=root_password,
             secure=False,
             http_client=PoolManager(
                 cert_reqs="CERT_NONE"

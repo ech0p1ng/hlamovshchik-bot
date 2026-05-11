@@ -8,6 +8,6 @@ def get_minio_service() -> MinioService:
     return MinioService(
         get_settings().minio.bucket_name,
         get_settings().minio.endpoint,
-        get_settings().minio.access_key,
-        get_settings().minio.secret_key,
+        get_settings().minio.root_user,
+        get_settings().minio.root_password,
     )
