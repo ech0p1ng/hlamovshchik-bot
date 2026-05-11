@@ -1,4 +1,4 @@
-domain.com {
+{$MINIO__DOMAIN} {
 
     encode gzip
 
@@ -7,7 +7,7 @@ domain.com {
     # =========================
     handle /i/* {
         rewrite * /private-bucket/i{uri}
-        reverse_proxy minio:9000
+        reverse_proxy {$MINIO__ENDPOINT}
     }
 
     # =========================
@@ -15,7 +15,7 @@ domain.com {
     # =========================
     handle /t/* {
         rewrite * /private-bucket/t{uri}
-        reverse_proxy minio:9000
+        reverse_proxy {$MINIO__ENDPOINT}
     }
 
     header {
@@ -25,6 +25,6 @@ domain.com {
     }
 }
 
-admin.domain.com {
-    reverse_proxy minio:9001
+{$MINIO__ADMIN_DOMAIN} {
+    reverse_proxy {$MINIO__ENDPOINT_SECURE}
 }
