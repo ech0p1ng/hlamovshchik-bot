@@ -6,7 +6,7 @@
     # ORIGINAL IMAGES (/i/)
     # =========================
     handle /i/* {
-        rewrite * /private-bucket/i{uri}
+        rewrite * /private-bucket{uri}
         reverse_proxy {$MINIO__ENDPOINT}
     }
 
@@ -14,7 +14,7 @@
     # THUMBNAILS (/t/)
     # =========================
     handle /t/* {
-        rewrite * /private-bucket/t{uri}
+        rewrite * /private-bucket{uri}
         reverse_proxy {$MINIO__ENDPOINT}
     }
 
